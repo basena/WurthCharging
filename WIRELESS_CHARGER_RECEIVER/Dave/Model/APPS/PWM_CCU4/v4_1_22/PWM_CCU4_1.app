@@ -24,7 +24,7 @@
     <downwardMapList xsi:type="ResourceModel:App" href="../../GLOBAL_CCU4/v4_1_12/GLOBAL_CCU4_0.app#/"/>
   </requiredApps>
   <hwResources name="CC4 Config" URI="http://resources/4.1.22/app/PWM_CCU4/1/hwres_ccu4_cc4_slice" resourceGroupUri="peripheral/ccu4/*/cc4/*" mResGrpUri="peripheral/ccu4/*/cc4/*">
-    <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/CCU40/CCU40_0.dd#//@provided.16"/>
+    <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/CCU40/CCU40_0.dd#//@provided.3"/>
   </hwResources>
   <hwResources name="PWM_CCU4 Channel Out" URI="http://resources/4.1.22/app/PWM_CCU4/1/hwres_port_channel_out" resourceGroupUri="" required="false" mResGrpUri="port/p/*/pad/*"/>
   <hwResources name="PWM_CCU4 Channel Out" URI="http://resources/4.1.22/app/PWM_CCU4/1/__pin_hwres_port_channel_out" resourceGroupUri="" required="false" mResGrpUri="devicepackage/0/*"/>
@@ -44,8 +44,8 @@
   <connections URI="http://resources/4.1.22/app/PWM_CCU4/1/http://resources/4.1.22/app/PWM_CCU4/1/vs_ccu4_cc4_channel_out_signal/http://resources/4.1.22/app/PWM_CCU4/1/vs_port_channel_out" systemDefined="true" sourceSignal="pwm_output" targetSignal="PWM_CCU4 Channel Out" required="false" srcVirtualSignal="//@virtualSignals.7" targetVirtualSignal="//@virtualSignals.17"/>
   <connections URI="http://resources/4.1.22/app/PWM_CCU4/1/http://resources/4.1.22/app/PWM_CCU4/1/vs_port_channel_out/http://resources/4.1.22/app/PWM_CCU4/1/__pin_vs_port_channel_out" systemDefined="true" sourceSignal="PWM_CCU4 Channel Out" targetSignal="PWM_CCU4 Channel Out_signal" srcVirtualSignal="//@virtualSignals.17" targetVirtualSignal="//@virtualSignals.18"/>
   <connections URI="http://resources/4.1.22/app/PWM_CCU4/1/http://resources/4.1.22/app/PWM_CCU4/1/__pin_vs_port_channel_out/http://resources/4.1.22/app/PWM_CCU4/1/vs_port_channel_out" systemDefined="true" sourceSignal="PWM_CCU4 Channel Out_signal" targetSignal="PWM_CCU4 Channel Out" srcVirtualSignal="//@virtualSignals.18" targetVirtualSignal="//@virtualSignals.17"/>
-  <connections URI="http://resources/4.1.22/app/PWM_CCU4/1/http://resources/4.1.22/app/PWM_CCU4/1/vs_ccu4_cc4_period_match_interrupt/http://resources/4.0.14/app/ADC_MEASUREMENT_ADV/0/vs_adc_measurement_adv_queue_greqtr0sel" sourceSignal="event_period_match" targetSignal="trigger_input" srcVirtualSignal="//@virtualSignals.2">
-    <downwardMapList xsi:type="ResourceModel:VirtualSignal" href="../../ADC_MEASUREMENT_ADV/v4_0_14/ADC_MEASUREMENT_ADV_0.app#//@virtualSignals.7"/>
-    <targetVirtualSignal href="../../ADC_MEASUREMENT_ADV/v4_0_14/ADC_MEASUREMENT_ADV_0.app#//@virtualSignals.7"/>
+  <connections URI="http://resources/4.1.22/app/PWM_CCU4/1/http://resources/4.1.22/app/PWM_CCU4/1/vs_ccu4_cc4_period_match_interrupt/http://resources/4.0.18/app/ADC_MEASUREMENT_ADV/0/vs_adc_measurement_adv_queue_greqtr0sel" sourceSignal="event_period_match" targetSignal="trigger_input" srcVirtualSignal="//@virtualSignals.2">
+    <downwardMapList xsi:type="ResourceModel:VirtualSignal" href="../../ADC_MEASUREMENT_ADV/v4_0_18/ADC_MEASUREMENT_ADV_0.app#//@virtualSignals.7"/>
+    <targetVirtualSignal href="../../ADC_MEASUREMENT_ADV/v4_0_18/ADC_MEASUREMENT_ADV_0.app#//@virtualSignals.7"/>
   </connections>
 </ResourceModel:App>

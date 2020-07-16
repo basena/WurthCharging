@@ -1,12 +1,12 @@
 /**
  * @file xmc_usic.h
- * @date 2017-02-10
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -76,6 +76,15 @@
  * 2017-02-10:
  *     - Added XMC_USIC_CH_SetShiftDirection() to allow selection of shift direction of the data words for transmision and reception
  *     - Added XMC_USIC_CH_GetCaptureTimerValue() and XMC_USIC_CH_SetFractionalDivider()
+ *
+ * 2017-09-08:
+ *     - Fixed value of macro XMC_USIC_CH_SHIFT_DIRECTION_MSB_FIRST used in XMC_USIC_CH_SetShiftDirection()
+ *
+ * 2018-09-29:
+ *     - Added XMC_USIC_CH_SetBaudrateEx which uses the integer divider instead of the fractional divider <br>
+ * 
+ * 2019-05-07:
+ *     - Added XMC_USIC_CH_GetBaudrate(), XMC_USIC_CH_GetSCLKFrequency() and XMC_USIC_CH_GetMCLKFrequency()
  *
  * @endcond
  *
@@ -450,7 +459,7 @@ typedef enum XMC_USIC_CH_BRG_SHIFT_CLOCK_OUTPUT
 typedef enum XMC_USIC_CH_SHIFT_DIRECTION
 {
   XMC_USIC_CH_SHIFT_DIRECTION_LSB_FIRST = 0x0UL, /**< Shift LSB first. The first data bit of a data word is located at bit position 0. */
-  XMC_USIC_CH_SHIFT_DIRECTION_MSB_FIRST = 0x1UL << USIC_CH_SCTR_SDIR_Msk /**< Shift MSB first. The first data bit of a data word is located at the bit position given by the configured word length. */ 
+  XMC_USIC_CH_SHIFT_DIRECTION_MSB_FIRST = 0x1UL << USIC_CH_SCTR_SDIR_Pos /**< Shift MSB first. The first data bit of a data word is located at the bit position given by the configured word length. */ 
 } XMC_USIC_CH_SHIFT_DIRECTION_t;
 
 
@@ -657,6 +666,74 @@ void XMC_USIC_CH_Disable(XMC_USIC_CH_t *const channel);
  * XMC_USIC_CH_SetStartTransmisionMode(), XMC_USIC_CH_SetInputSource() \n\n\n
  */
 XMC_USIC_CH_STATUS_t XMC_USIC_CH_SetBaudrate(XMC_USIC_CH_t *const channel, uint32_t rate, uint32_t oversampling);
+
+/**
+ * @param  channel Pointer to USIC channel handler of type @ref XMC_USIC_CH_t \n
+ *           \b Range: @ref XMC_USIC0_CH0, @ref XMC_USIC0_CH1 to @ref XMC_USIC2_CH1 based on device support.
+ * @param  rate Desired baudrate. Only integer dividers of peripheral clock are achievable
+ * @param  oversampling Required oversampling. The value indicates the number of time quanta for one symbol of data. \n
+ *            This can be related to the number of samples for each logic state of the data signal. \n
+ *            \b Range: 1 to 32. Value should be chosen based on the protocol used.
+ * @return Status indicating the baudrate configuration.\n
+ *      \b Range: @ref XMC_USIC_CH_STATUS_OK if baudrate is successfully configured,
+ *            @ref XMC_USIC_CH_STATUS_ERROR if desired baudrate or oversampling is invalid.
+ *
+ * \par<b>Description</b><br>
+ * Configures the baudrate of the USIC channel using the integer divider which restrics the achievable baudrate but decreses jitter. \n\n
+ * Baudrate is configured by considering the peripheral frequency and the desired baudrate.
+ * Optimum values of FDR->STEP and BRG->PDIV are calulated and used for generating the desired
+ * baudrate.
+ *
+ * \par<b>Related APIs:</b><BR>
+ * XMC_USIC_CH_SetStartTransmisionMode(), XMC_USIC_CH_SetInputSource() \n\n\n
+ */
+XMC_USIC_CH_STATUS_t XMC_USIC_CH_SetBaudrateEx(XMC_USIC_CH_t *const channel, uint32_t rate, uint32_t oversampling);
+
+
+/**
+ * @param  channel Pointer to USIC channel handler of type @ref XMC_USIC_CH_t \n
+ *           \b Range: @ref XMC_USIC0_CH0, @ref XMC_USIC0_CH1 to @ref XMC_USIC2_CH1 based on device support.
+ * @return baudrate currently used by USIC channel for .\n
+ *
+ * \par<b>Description</b><br>
+ * Calculates the current used baudrate (fCTQIN) of a USIC channel. \n\n
+ * @image html ../images/usic_brg.png	 
+ * @image latex ../images/usic_brg.png	 
+ *
+ * \par<b>Related APIs:</b><BR>
+ * XMC_USIC_CH_SetBaudrateMode(), XMC_USIC_CH_SetBaudrate(), XMC_USIC_CH_SetBaudrateEx() \n\n\n
+ */
+uint32_t XMC_USIC_CH_GetBaudrate(XMC_USIC_CH_t *const channel);
+
+/**
+ * @param  channel Pointer to USIC channel handler of type @ref XMC_USIC_CH_t \n
+ *           \b Range: @ref XMC_USIC0_CH0, @ref XMC_USIC0_CH1 to @ref XMC_USIC2_CH1 based on device support.
+ * @return baudrate currently used by USIC channel.\n
+ *
+ * \par<b>Description</b><br>
+ * Calculates the current used SCLK frequency of a USIC channel. \n\n
+ * @image html ../images/usic_brg.png	 
+ * @image latex ../images/usic_brg.png	 
+ *
+ * \par<b>Related APIs:</b><BR>
+ * XMC_USIC_CH_SetBaudrateMode(), XMC_USIC_CH_SetBaudrate(), XMC_USIC_CH_SetBaudrateEx() \n\n\n
+ */
+uint32_t XMC_USIC_CH_GetSCLKFrequency(XMC_USIC_CH_t *const channel);
+
+/**
+ * @param  channel Pointer to USIC channel handler of type @ref XMC_USIC_CH_t \n
+ *           \b Range: @ref XMC_USIC0_CH0, @ref XMC_USIC0_CH1 to @ref XMC_USIC2_CH1 based on device support.
+ * @return baudrate currently used by USIC channel.\n
+ *
+ * \par<b>Description</b><br>
+ * Calculates the current used MCLK frequency of a USIC channel. \n\n
+ * @image html ../images/usic_brg.png	 
+ * @image latex ../images/usic_brg.png	 
+ *
+ * \par<b>Related APIs:</b><BR>
+ * XMC_USIC_CH_SetBaudrateMode(), XMC_USIC_CH_SetBaudrate(), XMC_USIC_CH_SetBaudrateEx() \n\n\n
+ */
+uint32_t XMC_USIC_CH_GetMCLKFrequency(XMC_USIC_CH_t *const channel);
 
 /**
  * @param  channel Pointer to USIC channel handler of type @ref XMC_USIC_CH_t \n

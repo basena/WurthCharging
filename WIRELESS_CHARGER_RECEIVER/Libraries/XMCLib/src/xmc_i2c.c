@@ -1,12 +1,12 @@
 /**
  * @file xmc_i2c.c
- * @date 2015-10-02
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -53,6 +53,9 @@
  *
  * 2015-10-02:
  *     - Fixed 10bit addressing
+ *
+ * 2019-05-07:
+ *     - Added XMC_I2C_CH_SetBaudrateEx() which allows to select between baudrate generator normal divider and fractional divider mode 
  *
  * @endcond 
  *
@@ -117,7 +120,8 @@ void XMC_I2C_CH_Init(XMC_USIC_CH_t *const channel, const XMC_I2C_CH_CONFIG_t *co
                   USIC_CH_SCTR_PDL_Msk;            /* Passive Data Level */
 
   XMC_I2C_CH_SetSlaveAddress(channel, config->address);
-  (void)XMC_I2C_CH_SetBaudrate(channel, config->baudrate);
+  (void)XMC_I2C_CH_SetBaudrateEx(channel, config->baudrate, config->normal_divider_mode);
+  
     
   /* Enable transfer buffer */
   channel->TCSR = ((uint32_t)SET_TDV << (uint32_t)USIC_CH_TCSR_TDEN_Pos) | USIC_CH_TCSR_TDSSM_Msk;
@@ -156,6 +160,7 @@ uint16_t XMC_I2C_CH_GetSlaveAddress(const XMC_USIC_CH_t *const channel)
   
   return (uint16_t)address;
 }
+
 /* Sets the baudrate and oversampling based on standard speed or fast speed */
 XMC_I2C_CH_STATUS_t XMC_I2C_CH_SetBaudrate(XMC_USIC_CH_t *const channel, uint32_t rate)
 {
@@ -165,7 +170,7 @@ XMC_I2C_CH_STATUS_t XMC_I2C_CH_SetBaudrate(XMC_USIC_CH_t *const channel, uint32_
   
   if (rate <= (uint32_t)XMC_I2C_CH_MAX_SPEED_STANDARD)
   {
-		channel->PCR_IICMode &= (uint32_t)~USIC_CH_PCR_IICMode_STIM_Msk;
+	channel->PCR_IICMode &= (uint32_t)~USIC_CH_PCR_IICMode_STIM_Msk;
     if (XMC_USIC_CH_SetBaudrate(channel, rate, (uint32_t)XMC_I2C_CH_CLOCK_OVERSAMPLING_STANDARD) == XMC_USIC_CH_STATUS_OK)
     {
       status = XMC_I2C_CH_STATUS_OK;
@@ -186,6 +191,46 @@ XMC_I2C_CH_STATUS_t XMC_I2C_CH_SetBaudrate(XMC_USIC_CH_t *const channel, uint32_
   
   return status;
 }
+
+/* Sets the baudrate and oversampling based on standard speed or fast speed */
+XMC_I2C_CH_STATUS_t XMC_I2C_CH_SetBaudrateEx(XMC_USIC_CH_t *const channel, uint32_t rate, bool normal_divider_mode)
+{
+  XMC_USIC_CH_STATUS_t status;
+   
+  if (rate <= (uint32_t)XMC_I2C_CH_MAX_SPEED_STANDARD)
+  {
+	  channel->PCR_IICMode &= (uint32_t)~USIC_CH_PCR_IICMode_STIM_Msk;
+    if (normal_divider_mode)
+    {
+      status = XMC_USIC_CH_SetBaudrateEx(channel, rate, (uint32_t)XMC_I2C_CH_CLOCK_OVERSAMPLING_STANDARD);
+    }
+    else
+    {
+      /* Fractional divider mode */
+      status = XMC_USIC_CH_SetBaudrate(channel, rate, (uint32_t)XMC_I2C_CH_CLOCK_OVERSAMPLING_STANDARD);
+    }   
+  }
+  else if (rate <= (uint32_t)XMC_I2C_CH_MAX_SPEED_FAST)
+  {
+    channel->PCR_IICMode |= (uint32_t)USIC_CH_PCR_IICMode_STIM_Msk;
+    if (normal_divider_mode)
+    {
+      status = XMC_USIC_CH_SetBaudrateEx(channel, rate, (uint32_t)XMC_I2C_CH_CLOCK_OVERSAMPLING_STANDARD);
+    }
+    else
+    {
+      /* Fractional divider mode */
+      status = XMC_USIC_CH_SetBaudrate(channel, rate, (uint32_t)XMC_I2C_CH_CLOCK_OVERSAMPLING_STANDARD);
+    }
+  }
+  else 
+  {
+    status = XMC_USIC_CH_STATUS_ERROR;
+  }
+  
+  return (XMC_I2C_CH_STATUS_t)status;
+}
+
 /* Sends master start condition along with read/write command to IN/TBUF register based on FIFO/non-FIFO modes. */
 void XMC_I2C_CH_MasterStart(XMC_USIC_CH_t *const channel, const uint16_t addr, const XMC_I2C_CH_CMD_t command)
 {

@@ -1,12 +1,12 @@
 /**
  * @file xmc_spi.h
- * @date 2016-05-20
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -69,6 +69,14 @@
  * 2016-05-20:
  *     - Added XMC_SPI_CH_EnableDataTransmission() and XMC_SPI_CH_DisableDataTransmission()
  * 
+ * 2019-03-30:
+ *     - Fix XMC_SPI_CH_MODE_STANDARD_HALFDUPLEX macro value
+ * 
+ * 2019-05-07:
+ *     - Added normal_divider_mode to XMC_SPI_CH_CONFIG_t configuration structure.
+ *       It selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter at cost of frequency selection
+ *     - Added XMC_SPI_CH_SetBaudrateEx()
+ *
  * @endcond 
  *
  */
@@ -264,7 +272,7 @@ typedef enum XMC_SPI_CH_INPUT
 typedef enum XMC_SPI_CH_MODE
 {
   XMC_SPI_CH_MODE_STANDARD = 0UL,            /**< SPI standard full duplex mode */ 
-  XMC_SPI_CH_MODE_STANDARD_HALFDUPLEX = 4UL, /**< SPI standard half duplex mode */ 
+  XMC_SPI_CH_MODE_STANDARD_HALFDUPLEX = 5UL, /**< SPI standard half duplex mode */ 
   XMC_SPI_CH_MODE_DUAL= 6UL,                 /**< SPI half duplex mode with dual data lines */ 
   XMC_SPI_CH_MODE_QUAD= 7UL                  /**< SPI half duplex mode with quad data lines */
 } XMC_SPI_CH_MODE_t;
@@ -315,7 +323,8 @@ typedef enum XMC_SPI_CH_INTERRUPT_NODE_POINTER
  */
 typedef struct XMC_SPI_CH_CONFIG
 {
-  uint32_t baudrate;							  /**< Module baud rate for communication */
+  uint32_t baudrate;							                /**< Module baud rate for communication */
+  bool normal_divider_mode;                       /**< Selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter at cost of frequency selection */
   XMC_SPI_CH_BUS_MODE_t bus_mode;                 /**< Bus mode: Master/Slave */
   XMC_SPI_CH_SLAVE_SEL_MSLS_INV_t selo_inversion; /**< Enable inversion of Slave select signal relative to the internal 
                                                        MSLS signal  */
@@ -409,9 +418,26 @@ XMC_SPI_CH_STATUS_t XMC_SPI_CH_Stop(XMC_USIC_CH_t *const channel);
  * Sets the bus speed in bits per second
  *
  * \par<b>Related APIs:</b><BR>
- * XMC_SPI_CH_Init(), XMC_SPI_CH_Stop()
+ * XMC_SPI_CH_Init(), XMC_SPI_CH_Stop(), XMC_USIC_CH_GetSCLKFrequency()
  */
 XMC_SPI_CH_STATUS_t XMC_SPI_CH_SetBaudrate(XMC_USIC_CH_t *const channel, const uint32_t rate);
+
+/**
+ * @param channel A constant pointer to XMC_USIC_CH_t, pointing to the USIC channel base address.
+ * @param rate Bus speed in bits per second
+ * @param normal_divider_mode Selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter of signal at the cost of frequency selection
+ *
+ * @return XMC_SPI_CH_STATUS_t Status of the SPI driver after the request for setting baudrate is processed. \n
+ *        XMC_SPI_CH_STATUS_OK- If the baudrate is successfully changed. \n
+ *        XMC_SPI_CH_STATUS_ERROR- If the new baudrate value is out of range.
+ *
+ * \par<b>Description:</b><br>
+ * Sets the bus speed in bits per second
+ *
+ * \par<b>Related APIs:</b><BR>
+ * XMC_SPI_CH_Init(), XMC_SPI_CH_Stop(), XMC_USIC_CH_GetSCLKFrequency()
+ */
+XMC_SPI_CH_STATUS_t XMC_SPI_CH_SetBaudrateEx(XMC_USIC_CH_t *const channel, const uint32_t rate, bool normal_divider_mode);
 
 /**
  * @param channel A constant pointer to XMC_USIC_CH_t, pointing to the USIC channel base address.

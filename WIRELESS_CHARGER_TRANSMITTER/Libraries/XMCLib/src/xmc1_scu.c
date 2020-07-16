@@ -1,12 +1,12 @@
 /**
  * @file xmc1_scu.c
- * @date 2017-06-24
+ * @date 2019-03-20
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the
@@ -70,6 +70,26 @@
  *
  * 2017-06-24
  *     - Changed XMC_SCU_SetBMI() for XMC11/XMC12/XMC13 to set to 1 the bit 11 of BMI
+ *
+ * 2017-10-25
+ *     - Move the following functions to xmc1_scu.h as STATCI_INLINE and make them available for XMC1 families
+ *            XMC_SCU_CLOCK_EnableDCO1OscillatorWatchdog(), 
+ *            XMC_SCU_CLOCK_DisableDCO1OscillatorWatchdog(), 
+ *            XMC_SCU_CLOCK_ClearDCO1OscillatorWatchdogStatus(), 
+ *            XMC_SCU_CLOCK_IsDCO1ClockFrequencyUsable()
+ *     - Changed XMC_SCU_SetBMI() for XMC11/XMC12/XMC13 to set to 1 the bits [7:6] of BMI
+ *
+ * 2018-06-21:
+ *     - Changed XMC_SCU_CLOCK_Init() for XMC1400 adding a delay between disable/enable oscillator watchdog to avoid startup hangs when using external crystal oscillator
+ *     - Changed XMC_SCU_CLOCK_Init() for XMC1400 adding a wait time of 5s after enabling the RTC_XTAL
+ *
+ * 2019-03-20:
+ *     - Fix XMC_SCU_CLOCK_Init() if external XTAL is used  for XMC1400 (clock watchdog issue, see errata SCU_CM.023)
+ *     - Added DISABLE_WAIT_RTC_XTAL_OSC_STARTUP preprocessor guard:
+ *         The RTC_XTAL can be used as clock source for RTC or as reference for DCO1 calibration 
+ *         In both cases if no wait is done in the startup after enabling the RTC_XTAL oscillator,
+ *         the RTC_Enable() or the calibration will stall the MCU until the oscillator is stable (max. 5s according datasheet)
+ *     - Added XMC_SCU_CLOCK_SetHighPerformanceOscillatorMode() and XMC_SCU_CLOCK_SetLowPerformanceOscillatorMode()   
  *
  * @endcond
  *
@@ -258,12 +278,11 @@ static uint32_t XMC_SCU_CalcTSEVAR(uint32_t temperature)
 
 #if UC_SERIES == XMC14
 /* This is a local function used to generate the delay until register get updated with new configured value.  */
-static void delay(uint32_t cycles)
+__STATIC_FORCEINLINE void delay(uint32_t cycles)
 {
-  while(cycles > 0U)
+  while(--cycles > 0U)
   {
     __NOP();
-    cycles--;
   }
 }
 #endif
@@ -532,21 +551,32 @@ void XMC_SCU_CLOCK_Init(const XMC_SCU_CLOCK_CONFIG_t *const config)
     SCU_ANALOG->ANAOSCHPCTRL = (uint16_t)(SCU_ANALOG->ANAOSCHPCTRL & ~(SCU_ANALOG_ANAOSCHPCTRL_SHBY_Msk | SCU_ANALOG_ANAOSCHPCTRL_MODE_Msk)) |
                                config->oschp_mode;
 
-    do
+    do 
     {
-      /* Restart OSC_HP oscillator watchdog */
+      /* clear the status bit before restarting the detection. */
       SCU_INTERRUPT->SRCLR1 = SCU_INTERRUPT_SRCLR1_LOECI_Msk;
 
-      /* Enable OSC_HP oscillator watchdog*/
+      /* According to errata SCU_CM.023, to reset the XOWD it is needed to disable/enable the watchdog, 
+         keeping in between at least one DCO2 cycle */
+    
+      /* Disable XOWD */
       SCU_CLK->OSCCSR &= ~SCU_CLK_OSCCSR_XOWDEN_Msk;
-      SCU_CLK->OSCCSR |= SCU_CLK_OSCCSR_XOWDEN_Msk;
+      
+      /* Clock domains synchronization, at least 1 DCO2 cycle */
+      /* delay value calculation assuming worst case DCO1=48Mhz and 3cycles per delay iteration */
+      delay(538);
+      
+      /* Enable XOWD */
+      SCU_CLK->OSCCSR |= SCU_CLK_OSCCSR_XOWDEN_Msk | SCU_CLK_OSCCSR_XOWDRES_Msk;
 
-      /* Wait a few DCO2 cycles for the update of the clock detection result */
-      delay(2500);
+      /* OSCCSR.XOWDRES bit will be automatically reset to 0 after XOWD is reset */
+      while (SCU_CLK->OSCCSR & SCU_CLK_OSCCSR_XOWDRES_Msk);
 
-      /* check clock is ok */
-    }
-    while(SCU_INTERRUPT->SRRAW1 & SCU_INTERRUPT_SRRAW1_LOECI_Msk);
+      /* Wait a at least 5 DCO2 cycles for the update of the XTAL OWD result */
+      /* delay value calculation assuming worst case DCO1=48Mhz and 3cycles per delay iteration */
+      delay(2685);
+      
+    } while (SCU_INTERRUPT->SRRAW1 & SCU_INTERRUPT_SRRAW1_LOECI_Msk);
   }
   else /* (config->oschp_mode == XMC_SCU_CLOCK_OSCHP_MODE_DISABLED) */
   {
@@ -554,6 +584,13 @@ void XMC_SCU_CLOCK_Init(const XMC_SCU_CLOCK_CONFIG_t *const config)
   }
 
   SCU_ANALOG->ANAOSCLPCTRL = (uint16_t)config->osclp_mode;
+#ifndef DISABLE_WAIT_RTC_XTAL_OSC_STARTUP  
+  if (config->osclp_mode == XMC_SCU_CLOCK_OSCLP_MODE_OSC)
+  {
+    /* Wait oscillator startup time ~5s */
+    delay(6500000);
+  }
+#endif  
 
   SCU_CLK->CLKCR1 = (SCU_CLK->CLKCR1 & ~SCU_CLK_CLKCR1_DCLKSEL_Msk) |
                     config->dclk_src;
@@ -863,7 +900,7 @@ uint32_t XMC_SCU_SetBMI(uint32_t flags, uint8_t timeout)
 #if (UC_SERIES == XMC14)
   return ROM_BmiInstallationReq((flags & 0x0fffU) | ((timeout << 12) & 0xf000U));
 #else
-  return ROM_BmiInstallationReq((flags & 0x07ffU) | ((timeout << 12) & 0xf000U) | 0x0800U);
+  return ROM_BmiInstallationReq((flags & 0x07ffU) | ((timeout << 12) & 0xf000U) | 0x08c0U);
 #endif
 }
 
@@ -897,38 +934,6 @@ bool XMC_SCU_CLOCK_IsDCO1ExtRefCalibrationReady(void)
   return (bool)((SCU_ANALOG->ANASYNC2 & SCU_ANALOG_ANASYNC2_SYNC_READY_Msk) != 0U);
 }
 
-/**
- * This function enables the watchdog on the DCO1 frequency
- */
-void XMC_SCU_CLOCK_EnableDCO1OscillatorWatchdog(void)
-{
-  SCU_CLK->OSCCSR |= SCU_CLK_OSCCSR_OWDEN_Msk;
-}
-
-/**
- * This function disables the watchdog on the DCO1 frequency
- */
-void XMC_SCU_CLOCK_DisableDCO1OscillatorWatchdog(void)
-{
-  SCU_CLK->OSCCSR &= ~SCU_CLK_OSCCSR_OWDEN_Msk;
-}
-
-/**
- * This function clears the status of the watchdog on the DCO1 frequency
- */
-void XMC_SCU_CLOCK_ClearDCO1OscillatorWatchdogStatus(void)
-{
-  SCU_CLK->OSCCSR |= SCU_CLK_OSCCSR_OWDRES_Msk;
-}
-
-/**
- * This function checks if the DCO1 frequency is in the limits of the watchdog.
- */
-bool XMC_SCU_CLOCK_IsDCO1ClockFrequencyUsable(void)
-{
-  return ((SCU_CLK->OSCCSR & (SCU_CLK_OSCCSR_OSC2L_Msk | SCU_CLK_OSCCSR_OSC2H_Msk)) == 0U);
-}
-
 /* This function selects service request source for a NVIC interrupt node */
 void XMC_SCU_SetInterruptControl(uint8_t irq_number, XMC_SCU_IRQCTRL_t source)
 {
@@ -948,6 +953,21 @@ void XMC_SCU_SetInterruptControl(uint8_t irq_number, XMC_SCU_IRQCTRL_t source)
                           (source << (irq_number  * SCU_GENERAL_INTCR_INTSEL_Size));
   }
 }
+
+void XMC_SCU_CLOCK_SetHighPerformanceOscillatorMode(XMC_SCU_CLOCK_OSCHP_MODE_t mode)
+{
+  XMC_SCU_UnlockProtectedBits();
+  SCU_ANALOG->ANAOSCHPCTRL = (SCU_ANALOG->ANAOSCHPCTRL & (uint32_t)~(SCU_ANALOG_ANAOSCHPCTRL_MODE_Msk | SCU_ANALOG_ANAOSCHPCTRL_SHBY_Msk))
+                             | mode;
+  XMC_SCU_LockProtectedBits();
+}
+
+void XMC_SCU_CLOCK_SetLowPerformanceOscillatorMode(XMC_SCU_CLOCK_OSCLP_MODE_t mode)
+{
+  SCU_ANALOG->ANAOSCLPCTRL = mode;
+}
+
+
 
 #endif
 #endif /* UC_FAMILY == XMC1 */

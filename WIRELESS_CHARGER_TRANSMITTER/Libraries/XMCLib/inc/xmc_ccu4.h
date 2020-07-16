@@ -1,12 +1,12 @@
 /**
  * @file xmc_ccu4.h
- * @date 2017-04-27
+ * @date 2019-03-30
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -70,6 +70,14 @@
  *
  * 2017-04-27:
  *     - XMC_CCU4_SLICE_SetPrescaler() changed div_val parameter to type XMC_CCU4_SLICE_PRESCALER_t 
+ * 
+ * 2017-09-15:
+ *     - Fix XMC_CCU4_SLICE_SetShadowTransferMode()
+ *
+ * 2019-03-30:
+ *     - Changed XMC_CCU4_StartPrescaler(), XMC_CCU4_StopPrescaler(), XMC_CCU4_EnableMultipleClocks(), XMC_CCU4_EnableClock(), XMC_CCU4_DisableClock() to avoid RMW access
+ *     - Changed XMC_CCU4_SLICE_SetEvent(), XMC_CCU4_SLICE_ClearEvent() to avoid RMW access
+ *     - Added XMC_CCU4_SetSuspendMode(), XMC_CCU4_SLICE_GetPrescaler()
  * 
  * @endcond
  */
@@ -597,6 +605,17 @@ typedef enum XMC_CCU4_SLICE_MASK
   XMC_CCU4_SLICE_MASK_SLICE_3  = 8U   /**< SLICE-3 */
 } XMC_CCU4_SLICE_MASK_t;
 
+/**
+ *  Selects suspend mode
+ */
+typedef enum XMC_CCU4_SUSPEND_MODE
+{
+  XMC_CCU4_SUSPEND_MODE_IGNORE = 0 << CCU4_GCTRL_SUSCFG_Pos, /**< Suspend request ignored. The module never enters in suspend */
+  XMC_CCU4_SUSPEND_MODE_STOPS_INMEDIATELLY = 1 << CCU4_GCTRL_SUSCFG_Pos, /**< Stops all the running slices immediately. Safe stop is not applied. */
+  XMC_CCU4_SUSPEND_MODE_SAFE_STOP = 2 << CCU4_GCTRL_SUSCFG_Pos, /**< Stops the block immediately and clamps all the outputs to PASSIVE state. Safe stop is applied. */
+  XMC_CCU4_SUSPEND_MODE_WAIT_ROLL_OVER = 3 << CCU4_GCTRL_SUSCFG_Pos /**< Waits for the roll over of each slice to stop and clamp the slices outputs. Safe stop is applied. */
+} XMC_CCU4_SUSPEND_MODE_t;
+
 
 /*********************************************************************************************************************
  * DATA STRUCTURES
@@ -860,7 +879,7 @@ void XMC_CCU4_DisableModule(XMC_CCU4_MODULE_t *const module);
 __STATIC_INLINE void XMC_CCU4_StartPrescaler(XMC_CCU4_MODULE_t *const module)
 {
   XMC_ASSERT("XMC_CCU4_StartPrescaler:Invalid Module Pointer", XMC_CCU4_IsValidModule(module));
-  module->GIDLC |= (uint32_t) CCU4_GIDLC_SPRB_Msk;
+  module->GIDLC = (uint32_t) CCU4_GIDLC_SPRB_Msk;
 }
 
 /**
@@ -880,7 +899,7 @@ __STATIC_INLINE void XMC_CCU4_StartPrescaler(XMC_CCU4_MODULE_t *const module)
 __STATIC_INLINE void XMC_CCU4_StopPrescaler(XMC_CCU4_MODULE_t *const module)
 {
   XMC_ASSERT("XMC_CCU4_StopPrescaler:Invalid Module Pointer", XMC_CCU4_IsValidModule(module));
-  module->GIDLS |= (uint32_t) CCU4_GIDLS_CPRB_Msk;
+  module->GIDLS = (uint32_t) CCU4_GIDLS_CPRB_Msk;
 }
 
 /**
@@ -924,7 +943,7 @@ __STATIC_INLINE void XMC_CCU4_EnableMultipleClocks(XMC_CCU4_MODULE_t *const modu
   XMC_ASSERT("XMC_CCU4_EnableMultipleClocks:Invalid Module Pointer", XMC_CCU4_IsValidModule(module));
   XMC_ASSERT("XMC_CCU4_EnableMultipleClocks:Wrong clock mask", (clock_mask < 16U));
   
-  module->GIDLC |= (uint32_t) clock_mask;
+  module->GIDLC = (uint32_t) clock_mask;
 }
 
 /**
@@ -948,7 +967,7 @@ __STATIC_INLINE void XMC_CCU4_EnableClock(XMC_CCU4_MODULE_t *const module, const
   XMC_ASSERT("XMC_CCU4_EnableClock:Invalid Module Pointer", XMC_CCU4_IsValidModule(module));
   XMC_ASSERT("XMC_CCU4_EnableClock:Invalid Slice Number", (slice_number < 4U));
 
-  module->GIDLC |= ((uint32_t) 1) << slice_number;
+  module->GIDLC = ((uint32_t) 1) << slice_number;
 }
 
 /**
@@ -973,7 +992,25 @@ __STATIC_INLINE void XMC_CCU4_DisableClock(XMC_CCU4_MODULE_t *const module, cons
   XMC_ASSERT("XMC_CCU4_DisableClock:Invalid Module Pointer", XMC_CCU4_IsValidModule(module));
   XMC_ASSERT("XMC_CCU4_DisableClock:Invalid Slice Number", (slice_number < 4U));
 
-  module->GIDLS |= ((uint32_t) 1) << slice_number;
+  module->GIDLS = ((uint32_t) 1) << slice_number;
+}
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @param mode   Selects suspend mode
+ * @return <BR>
+ *    None<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Configures the entering in suspend mode for all the CCU8 slices.
+ *
+ * \par<b>Related APIs:</b><br>
+ * None.
+ */
+__STATIC_INLINE void XMC_CCU4_SetSuspendMode(XMC_CCU4_MODULE_t *const module, const XMC_CCU4_SUSPEND_MODE_t mode)
+{
+  XMC_ASSERT("XMC_CCU4_EnableMultipleClocks:Invalid Module Pointer", XMC_CCU4_IsValidModule(module));
+  module->GCTRL = (module->GCTRL & (uint32_t)~CCU4_GCTRL_SUSCFG_Msk) | mode;
 }
 
 /**
@@ -1852,7 +1889,7 @@ __STATIC_INLINE void XMC_CCU4_SLICE_DisableFloatingPrescaler(XMC_CCU4_SLICE_t *c
  * the spread value, there is no dithering. After setting the value XMC_CCU4_EnableShadowTransfer() has to be
  * called with appropriate mask.
  *
-  * \par<b>Related APIs:</b><br>
+ * \par<b>Related APIs:</b><br>
  *  XMC_CCU4_SLICE_EnableDithering().
  */
 __STATIC_INLINE void XMC_CCU4_SLICE_SetDitherCompareValue(XMC_CCU4_SLICE_t *const slice, const uint8_t comp_val)
@@ -1860,6 +1897,7 @@ __STATIC_INLINE void XMC_CCU4_SLICE_SetDitherCompareValue(XMC_CCU4_SLICE_t *cons
   XMC_ASSERT("XMC_CCU4_SLICE_SetDitherCompareValue:Invalid Slice Pointer", XMC_CCU4_IsValidSlice(slice));
   slice->DITS = comp_val;
 }
+
 /**
  * @param slice Constant pointer to CC4 Slice
  * @param div_val Prescaler divider value. Accepts enum :: XMC_CCU4_SLICE_PRESCALER_t
@@ -1876,6 +1914,25 @@ __STATIC_INLINE void XMC_CCU4_SLICE_SetDitherCompareValue(XMC_CCU4_SLICE_t *cons
  *  XMC_CCU4_SLICE_SetFloatingPrescalerCompareValue().
  */
 void XMC_CCU4_SLICE_SetPrescaler(XMC_CCU4_SLICE_t *const slice, const XMC_CCU4_SLICE_PRESCALER_t div_val);
+
+/**
+ * @param slice Constant pointer to CC4 Slice
+ * @return <BR>
+ *    XMC_CCU4_SLICE_PRESCALER_t Prescaler divider value.<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Returns current prescaler value.\n\n
+ * Used to detrmine the clock frequency of the CCU8 slice XMC_SCU_CLOCK_GetCcuClockFrequency() / XMC_CCU4_SLICE_GetPrescaler()
+ *
+ * \par<b>Related APIs:</b><br>
+ *  XMC_CCU4_SLICE_SetPrescaler().
+ */
+__STATIC_INLINE XMC_CCU4_SLICE_PRESCALER_t XMC_CCU4_SLICE_GetPrescaler(XMC_CCU4_SLICE_t *const slice)
+{
+  XMC_ASSERT("XMC_CCU8_SLICE_SetPrescaler:Invalid Slice Pointer", XMC_CCU4_IsValidSlice(slice));
+
+  return (XMC_CCU4_SLICE_PRESCALER_t)slice->PSC;
+}
 
 /**
  * @param slice Constant pointer to CC4 Slice
@@ -2110,7 +2167,7 @@ __STATIC_INLINE void XMC_CCU4_SLICE_SetEvent(XMC_CCU4_SLICE_t *const slice, cons
 {
   XMC_ASSERT("XMC_CCU4_SLICE_SetEvent:Invalid Slice Pointer", XMC_CCU4_IsValidSlice(slice));
   XMC_ASSERT("XMC_CCU4_SLICE_SetEvent:Invalid SR event", XMC_CCU4_SLICE_CHECK_INTERRUPT(event));
-  slice->SWS |= ((uint32_t) 1) << ((uint32_t) event);
+  slice->SWS = ((uint32_t) 1) << ((uint32_t) event);
 }
 
 /**
@@ -2129,7 +2186,7 @@ __STATIC_INLINE void XMC_CCU4_SLICE_ClearEvent(XMC_CCU4_SLICE_t *const slice, co
 {
   XMC_ASSERT("XMC_CCU4_SLICE_ClearEvent:Invalid Slice Pointer", XMC_CCU4_IsValidSlice(slice));
   XMC_ASSERT("XMC_CCU4_SLICE_ClearEvent:Invalid SR event", XMC_CCU4_SLICE_CHECK_INTERRUPT(event));
-  slice->SWR |= ((uint32_t) 1) << ((uint32_t) event);
+  slice->SWR = ((uint32_t) 1) << ((uint32_t) event);
 }
 
 /**
@@ -2264,7 +2321,7 @@ __STATIC_INLINE void XMC_CCU4_SLICE_SetShadowTransferMode(XMC_CCU4_SLICE_t *cons
                                                           const XMC_CCU4_SLICE_SHADOW_TRANSFER_MODE_t shadow_transfer_mode)
 {
   XMC_ASSERT("XMC_CCU4_SLICE_SetShadowTransferMode:Invalid Slice Pointer", XMC_CCU4_IsValidSlice(slice));
-  slice->STC = ((slice->STC) & ~(uint32_t)((uint32_t)CCU4_CC4_STC_STM_Msk << (uint32_t)CCU4_CC4_STC_STM_Pos)) |
+  slice->STC = ((slice->STC) & (uint32_t)~CCU4_CC4_STC_STM_Msk) |
                ((shadow_transfer_mode << CCU4_CC4_STC_STM_Pos) & (uint32_t)CCU4_CC4_STC_STM_Msk);
 }
 

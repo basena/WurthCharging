@@ -1,12 +1,12 @@
 /**
  * @file xmc_usic.c
- * @date 2015-09-01
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -55,6 +55,15 @@
  * 2015-09-01:
  *     - Fixed warning in the asserts <br>
  *
+ * 2018-09-29:
+ *     - Added XMC_USIC_CH_SetBaudrateEx which uses the integer divider instead of the fractional divider <br>
+ * 
+ * 2019-03-30:
+ *     - Changed XMC_USIC_Enable() adding polling to check clock ungate
+ *
+ * 2019-05-07:
+ *     - Added XMC_USIC_CH_GetBaudrate(), XMC_USIC_CH_GetSCLKFrequency() and XMC_USIC_CH_GetMCLKFrequency()
+ *
  * @endcond
  *
  */
@@ -65,6 +74,8 @@
 
 #include "xmc_usic.h"
 #include "xmc_scu.h"
+
+#include <stdlib.h>     /* abs */
 
 /*******************************************************************************
  * MACROS
@@ -176,6 +187,149 @@ XMC_USIC_CH_STATUS_t XMC_USIC_CH_SetBaudrate(XMC_USIC_CH_t *const channel, uint3
   
   return status;
 }
+
+XMC_USIC_CH_STATUS_t XMC_USIC_CH_SetBaudrateEx(XMC_USIC_CH_t *const channel, uint32_t rate, uint32_t oversampling)
+{
+  uint32_t peripheral_clock = XMC_SCU_CLOCK_GetPeripheralClockFrequency();
+  uint32_t brg_clock = rate * oversampling;
+  uint32_t divider_step;
+  uint32_t actual_rate_upper;
+  uint32_t actual_rate_lower;
+  XMC_USIC_CH_STATUS_t status;
+  uint32_t pdiv = 1;
+
+  if (peripheral_clock > brg_clock)
+  {
+    divider_step = peripheral_clock / brg_clock; // integer division gets truncated
+    while (divider_step >= 1023)
+    {
+      pdiv++;
+      brg_clock = rate * oversampling * pdiv;
+      divider_step = peripheral_clock / brg_clock; // integer division gets truncated
+    }
+    actual_rate_upper = peripheral_clock / (divider_step * oversampling * pdiv);
+    actual_rate_lower = peripheral_clock / ((divider_step + 1) * oversampling * pdiv);
+
+    // choose better approximation if the peripheral frequency is not a multiple of the baudrate
+    if (abs(rate - actual_rate_lower) < abs(rate - actual_rate_upper))
+    {
+      divider_step += 1;
+    }
+
+    divider_step = 1024 - divider_step;
+
+
+    channel->FDR = XMC_USIC_CH_BRG_CLOCK_DIVIDER_MODE_NORMAL |
+                   (divider_step << USIC_CH_FDR_STEP_Pos);
+
+    channel->BRG = (channel->BRG & ~(USIC_CH_BRG_DCTQ_Msk |
+                                     USIC_CH_BRG_PDIV_Msk |
+                                     USIC_CH_BRG_PCTQ_Msk |
+                                     USIC_CH_BRG_PPPEN_Msk)) |
+                   ((oversampling - 1U) << USIC_CH_BRG_DCTQ_Pos) |
+				   ((pdiv -1) << USIC_CH_BRG_PDIV_Pos);
+
+    status = XMC_USIC_CH_STATUS_OK;
+  }
+  else
+  {
+    status = XMC_USIC_CH_STATUS_ERROR;
+  }
+
+  return status;
+}
+
+uint32_t XMC_USIC_CH_GetBaudrate(XMC_USIC_CH_t *const channel)
+{
+  uint32_t divider;
+  if ((channel->BRG & USIC_CH_BRG_CTQSEL_Msk) == USIC_CH_BRG_CTQSEL_Msk)
+  {
+	// CTQSEL = 3
+    divider = 2;
+  }
+  else
+  {
+	// CTQSEL = 0, 1, or 2
+    divider = (channel->BRG & USIC_CH_BRG_PPPEN_Msk) ? 2 : 1;
+  
+    if ((((channel->BRG & USIC_CH_BRG_CTQSEL_Msk) >> USIC_CH_BRG_CTQSEL_Pos) & 0x1) == 0)
+    {
+	  // CTQSEL = 0 or 2
+      divider *= ((channel->BRG & USIC_CH_BRG_PDIV_Msk) >> USIC_CH_BRG_PDIV_Pos) + 1;
+      if ((((channel->BRG & USIC_CH_BRG_CTQSEL_Msk) >> USIC_CH_BRG_CTQSEL_Pos) & 0x2) != 0)
+      {
+        // CTQSEL = 2
+        divider *= 2;
+      }
+    }
+  }
+
+  divider *= ((channel->BRG & USIC_CH_BRG_PCTQ_Msk) >> USIC_CH_BRG_PCTQ_Pos) + 1;
+  divider *= ((channel->BRG & USIC_CH_BRG_DCTQ_Msk) >> USIC_CH_BRG_DCTQ_Pos) + 1;
+
+  uint32_t fperi = XMC_SCU_CLOCK_GetPeripheralClockFrequency();
+  float baudrate;
+  if ((channel->FDR & USIC_CH_FDR_DM_Msk) == XMC_USIC_CH_BRG_CLOCK_DIVIDER_MODE_FRACTIONAL)
+  {
+	baudrate = fperi * (((channel->FDR & USIC_CH_FDR_STEP_Msk) >> USIC_CH_FDR_STEP_Pos) / 1024.0F);
+  }
+  else
+  {
+    /* Normal divider mode */
+    baudrate = fperi * (1.0F / (1024 - ((channel->FDR & USIC_CH_FDR_STEP_Msk) >> USIC_CH_FDR_STEP_Pos)));
+  }
+
+  baudrate /= divider;
+
+  return baudrate;
+}
+
+uint32_t XMC_USIC_CH_GetSCLKFrequency(XMC_USIC_CH_t *const channel)
+{
+  uint32_t divider;
+  divider = (channel->BRG & USIC_CH_BRG_PPPEN_Msk) ? 2 : 1;
+  divider *= ((channel->BRG & USIC_CH_BRG_PDIV_Msk) >> USIC_CH_BRG_PDIV_Pos) + 1;
+  divider *= 2;
+
+  uint32_t fperi = XMC_SCU_CLOCK_GetPeripheralClockFrequency();
+  float baudrate;
+  if ((channel->FDR & USIC_CH_FDR_DM_Msk) == XMC_USIC_CH_BRG_CLOCK_DIVIDER_MODE_FRACTIONAL)
+  {
+    /* Fractional divider mode */
+    baudrate = fperi * (((channel->FDR & USIC_CH_FDR_STEP_Msk) >> USIC_CH_FDR_STEP_Pos) / 1024.0F);
+  }
+  else
+  {
+    /* Normal divider mode */
+    baudrate = fperi * (1.0F / (1024 - ((channel->FDR & USIC_CH_FDR_STEP_Msk) >> USIC_CH_FDR_STEP_Pos)));
+  }
+
+  baudrate /= divider;
+
+  return baudrate;
+}
+
+uint32_t XMC_USIC_CH_GetMCLKFrequency(XMC_USIC_CH_t *const channel)
+{
+  uint32_t fperi = XMC_SCU_CLOCK_GetPeripheralClockFrequency();
+
+  float baudrate;
+  if ((channel->FDR & USIC_CH_FDR_DM_Msk) == XMC_USIC_CH_BRG_CLOCK_DIVIDER_MODE_FRACTIONAL)
+  {
+    /* Fractional divider mode */
+    baudrate = fperi * (1.0F / (1024 - ((channel->FDR & USIC_CH_FDR_STEP_Msk) >> USIC_CH_FDR_STEP_Pos)));
+  }
+  else
+  {
+    /* Normal divider mode */
+    baudrate = fperi / (((channel->FDR & USIC_CH_FDR_STEP_Msk) >> USIC_CH_FDR_STEP_Pos) / 1024.0F);
+  }
+
+  baudrate /= 2;
+
+  return baudrate;
+}
+
 
 void XMC_USIC_CH_ConfigExternalInputSignalToBRG(XMC_USIC_CH_t *const channel,
 		                                        const uint16_t pdiv,
@@ -299,20 +453,24 @@ void XMC_USIC_Enable(XMC_USIC_t *const usic)
   {
 #if defined(CLOCK_GATING_SUPPORTED)
     XMC_SCU_CLOCK_UngatePeripheralClock(XMC_SCU_PERIPHERAL_CLOCK_USIC0);
+    while (XMC_SCU_CLOCK_IsPeripheralClockGated(XMC_SCU_PERIPHERAL_CLOCK_USIC0));
 #endif
 #if defined(PERIPHERAL_RESET_SUPPORTED)
     XMC_SCU_RESET_DeassertPeripheralReset(XMC_SCU_PERIPHERAL_RESET_USIC0);
-#endif	
+    while (XMC_SCU_RESET_IsPeripheralResetAsserted(XMC_SCU_PERIPHERAL_RESET_USIC0));
+#endif 
   }
 #if defined(USIC1)  
   else if (usic == USIC1)
   {
 #if defined(CLOCK_GATING_SUPPORTED)
     XMC_SCU_CLOCK_UngatePeripheralClock(XMC_SCU_PERIPHERAL_CLOCK_USIC1);
-#endif	
+    while (XMC_SCU_CLOCK_IsPeripheralClockGated(XMC_SCU_PERIPHERAL_CLOCK_USIC1));
+#endif 
 #if defined(PERIPHERAL_RESET_SUPPORTED)
     XMC_SCU_RESET_DeassertPeripheralReset(XMC_SCU_PERIPHERAL_RESET_USIC1);
-#endif	
+    while (XMC_SCU_RESET_IsPeripheralResetAsserted(XMC_SCU_PERIPHERAL_RESET_USIC1));
+#endif 
   }
 #endif  
 #if defined(USIC2)  
@@ -320,10 +478,12 @@ void XMC_USIC_Enable(XMC_USIC_t *const usic)
   {
 #if defined(CLOCK_GATING_SUPPORTED) 
     XMC_SCU_CLOCK_UngatePeripheralClock(XMC_SCU_PERIPHERAL_CLOCK_USIC2);
+    while (XMC_SCU_CLOCK_IsPeripheralClockGated(XMC_SCU_PERIPHERAL_CLOCK_USIC2));
 #endif
 #if defined(PERIPHERAL_RESET_SUPPORTED)
     XMC_SCU_RESET_DeassertPeripheralReset(XMC_SCU_PERIPHERAL_RESET_USIC2);
-#endif	
+    while (XMC_SCU_RESET_IsPeripheralResetAsserted(XMC_SCU_PERIPHERAL_RESET_USIC2));
+#endif 
   }
 #endif  
   else

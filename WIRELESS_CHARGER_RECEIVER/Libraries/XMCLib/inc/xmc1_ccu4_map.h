@@ -1,12 +1,12 @@
 /**
  * @file xmc1_ccu4_map.h
- * @date 2015-08-25
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -38,6 +38,9 @@
  *
  * 2015-08-25:
  *     - Initial version
+ * 
+ * 2019-05-07:
+ *     - Add missing CCU41_IN3_CCU41_GP00 macros for XMC14
  *
  * @endcond
  */
@@ -1421,6 +1424,7 @@
 #define CCU41_IN2_P4_6                     	21
 #define CCU41_IN2_SCU_GSC40                	8
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -1574,6 +1578,7 @@
 #define CCU41_IN2_P4_6                     	21
 #define CCU41_IN2_SCU_GSC40                	8
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -1797,6 +1802,7 @@
 #define CCU41_IN3_BCCU0_OUT5               	16
 #define CCU41_IN3_BCCU0_OUT8               	25
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -1994,6 +2000,7 @@
 #define CCU41_IN3_BCCU0_OUT5               	16
 #define CCU41_IN3_BCCU0_OUT8               	25
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -2203,6 +2210,7 @@
 #define CCU41_IN3_BCCU0_OUT5               	16
 #define CCU41_IN3_BCCU0_OUT8               	25
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -2433,6 +2441,7 @@
 #define CCU41_IN3_BCCU0_OUT5               	16
 #define CCU41_IN3_BCCU0_OUT8               	25
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -2630,6 +2639,7 @@
 #define CCU41_IN3_BCCU0_OUT5               	16
 #define CCU41_IN3_BCCU0_OUT8               	25
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -2772,6 +2782,7 @@
 #define CCU41_IN2_P0_6                     	1
 #define CCU41_IN2_SCU_GSC40                	8
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -2919,6 +2930,7 @@
 #define CCU41_IN2_P4_6                     	21
 #define CCU41_IN2_SCU_GSC40                	8
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -3081,6 +3093,7 @@
 #define CCU41_IN2_P4_6                     	21
 #define CCU41_IN2_SCU_GSC40                	8
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -3308,6 +3321,7 @@
 #define CCU41_IN3_BCCU0_OUT5               	16
 #define CCU41_IN3_BCCU0_OUT8               	25
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13
@@ -3528,6 +3542,7 @@
 #define CCU41_IN3_BCCU0_OUT5               	16
 #define CCU41_IN3_BCCU0_OUT8               	25
 #define CCU41_IN3_CCU40_ST3                	11
+#define CCU41_IN3_CCU41_GP00               	12
 #define CCU41_IN3_CCU41_SR1                	19
 #define CCU41_IN3_CCU41_SR3                	27
 #define CCU41_IN3_CCU41_ST0                	13

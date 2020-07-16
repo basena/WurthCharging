@@ -7,7 +7,7 @@
  *
  * @cond
  ***********************************************************************************************************************
- * UCPROBE v4.0.4 - Configures UCPROBE target code
+ * UCPROBE v4.0.8 - Configures UCPROBE target code
  * Copyright (c) 2015-2017, Infineon Technologies AG
  * All rights reserved.
  *

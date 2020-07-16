@@ -1,12 +1,12 @@
 /**
  * @file xmc_i2c.h
- * @date 2016-05-20
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -69,6 +69,14 @@
  *
  * 2016-08-17:
  *     - Improved documentation of slave address passing
+ *
+ * 2017-10-25:
+ *     - Added XMC_I2C_CH_EnableMasterClock() and XMC_I2C_CH_DisableMasterClock()
+ *
+ * 2019-05-07:
+ *     - Added normal_divider_mode to XMC_I2C_CH_CONFIG_t configuration structure.
+ *       It selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter at cost of frequency selection
+ *     - Added XMC_I2C_CH_SetBaudrateEx()
  *
  * @endcond 
  *
@@ -252,6 +260,7 @@ typedef enum XMC_I2C_CH_INTERRUPT_NODE_POINTER
 typedef struct XMC_I2C_CH_CONFIG
 {
   uint32_t baudrate;   /**< baud rate configuration upto max of 400KHz */
+  bool normal_divider_mode; /**< Selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter at cost of frequency selection */
   uint16_t address;    /**< slave address 
                             A 7-bit address needs to be left shifted it by 1.
                             A 10-bit address needs to be ORed with XMC_I2C_10BIT_ADDR_GROUP. */
@@ -300,6 +309,24 @@ void XMC_I2C_CH_Init(XMC_USIC_CH_t *const channel, const XMC_I2C_CH_CONFIG_t *co
  * XMC_USIC_CH_SetBaudrate()\n\n
  */
 XMC_I2C_CH_STATUS_t XMC_I2C_CH_SetBaudrate(XMC_USIC_CH_t *const channel, const uint32_t rate);
+
+/**
+ * @param channel Constant pointer to USIC channel structure of type @ref XMC_USIC_CH_t
+ * @param rate  baud rate of I2C channel
+ * @param normal_divider_mode Selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter of signal at the cost of frequency selection
+ *
+ * @return None<br>
+ *
+ * \par<b>Description:</b><br>
+ * Sets the rate of I2C \a channel.
+ *
+ * \par<b>Note:</b><br>
+ * Standard over sampling is considered if rate <= 100KHz and fast over sampling is considered if rate > 100KHz.<br>
+ *
+ * \par<b>Related APIs:</b><br>
+ * XMC_USIC_CH_SetBaudrate()\n\n
+ */
+XMC_I2C_CH_STATUS_t XMC_I2C_CH_SetBaudrateEx(XMC_USIC_CH_t *const channel, uint32_t rate, bool normal_divider_mode);
 
 /**
  * @param channel Constant pointer to USIC channel structure of type @ref XMC_USIC_CH_t
@@ -765,6 +792,42 @@ __STATIC_INLINE void XMC_I2C_CH_EnableDataTransmission(XMC_USIC_CH_t *const chan
 __STATIC_INLINE void XMC_I2C_CH_DisableDataTransmission(XMC_USIC_CH_t *const channel)
 {
   XMC_USIC_CH_SetStartTransmisionMode(channel, XMC_USIC_CH_START_TRANSMISION_DISABLED); 
+}
+
+/**
+ * @param channel A constant pointer to XMC_USIC_CH_t, pointing to the USIC channel base address.
+ *
+ * @return None
+ *
+ * \par<b>Description:</b><br>
+ * Enables the generation of Master clock by setting PCR.MCLK bit.\n\n
+ * This clock can be used as a clock reference for external devices. This is not enabled during initialization in
+ * XMC_I2C_CH_Init(). Invoke XMC_I2C_CH_EnableMasterClock() to enable as needed in the program, or if it is disabled by
+ * XMC_I2C_CH_DisableMasterClock().
+ *
+ * \par<b>Related APIs:</b><BR>
+ * XMC_I2C_CH_DisableMasterClock()
+ */
+__STATIC_INLINE void XMC_I2C_CH_EnableMasterClock(XMC_USIC_CH_t *const channel)
+{
+  channel->PCR_IICMode |= (uint32_t)USIC_CH_PCR_IICMode_MCLK_Msk;
+}
+
+/**
+ * @param channel A constant pointer to XMC_USIC_CH_t, pointing to the USIC channel base address.
+ *
+ * @return None
+ *
+ * \par<b>Description:</b><br>
+ * Disables the generation of Master clock by clearing PCR.MCLK bit.\n\n
+ * This clock can be enabled by invoking XMC_I2C_CH_EnableMasterClock() as needed in the program.
+ *
+ * \par<b>Related APIs:</b><BR>
+ * XMC_I2C_CH_EnableMasterClock()
+ */
+__STATIC_INLINE void XMC_I2C_CH_DisableMasterClock(XMC_USIC_CH_t *const channel)
+{
+  channel->PCR_IICMode &= (uint32_t)~USIC_CH_PCR_IICMode_MCLK_Msk;
 }
 
 #ifdef __cplusplus

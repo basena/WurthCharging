@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ASCII"?>
 <xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="com.ifx.davex.graphiti.pin.mapping" xmlns:al="http://eclipse.org/graphiti/mm/algorithms" xmlns:pi="http://eclipse.org/graphiti/mm/pictograms">
-  <pi:Diagram visible="true" gridUnit="10" diagramTypeId="com.ifx.davex.pin.allocator.diagramType" name="PinAllocator" version="0.11.0">
+  <pi:Diagram visible="true" gridUnit="10" diagramTypeId="com.ifx.davex.pin.allocator.diagramType" name="PinAllocator" version="0.13.0">
     <graphicsAlgorithm xsi:type="al:Rectangle" background="/0/@colors.1" foreground="/0/@colors.0" lineWidth="1" transparency="0.0" width="1000" height="1000"/>
     <colors red="227" green="238" blue="249"/>
     <colors red="255" green="255" blue="255"/>

@@ -1,12 +1,12 @@
 /**
  * @file xmc_ccu8.h
- * @date 2017-04-27
+ * @date 2019-03-30
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -85,6 +85,17 @@
  * 2017-04-27:
  *     - XMC_CCU8_SLICE_SetPrescaler() changed div_val parameter to type XMC_CCU8_SLICE_PRESCALER_t 
  *
+ * 2017-09-15:
+ *     - Fix XMC_CCU8_SLICE_SetShadowTransferMode()
+ *     - Added parity checking functionality
+ *
+ * 2019-03-30:
+ *     - Changed XMC_CCU8_StartPrescaler(), XMC_CCU8_StartParityChecker(), XMC_CCU8_StopPrescaler(), XMC_CCU8_StopParityChecker(), 
+ *       XMC_CCU8_EnableMultipleClocks(), XMC_CCU8_EnableClock(), XMC_CCU8_DisableClock() to avoid RMW access
+ *     - Changed XMC_CCU8_SLICE_SetEvent(), XMC_CCU8_SLICE_ClearEvent() to avoid RMW access
+ *     - Added XMC_CCU8_SetSuspendMode(), XMC_CCU8_SLICE_GetPrescaler()
+ *     - Added XMC_CCU8_SLICE_GetTimerCompareMatchChannel1() and XMC_CCU8_SLICE_GetTimerCompareMatchChannel2()
+ * 
  * @endcond
  */
 
@@ -769,6 +780,7 @@ typedef enum XMC_CCU8_SLICE_AUTOMAIC_SHADOW_TRANSFER_WRITE_INTO
 
 } XMC_CCU8_SLICE_AUTOMAIC_SHADOW_TRANSFER_WRITE_INTO_t;
 #endif
+
 /**
  *  CCU8 slice mask which can be used for the APIs as input where multi slice support is available
  */
@@ -779,6 +791,49 @@ typedef enum XMC_CCU8_SLICE_MASK
   XMC_CCU8_SLICE_MASK_SLICE_2  = 4U , /**< SLICE-2 */
   XMC_CCU8_SLICE_MASK_SLICE_3  = 8U   /**< SLICE-3 */
 } XMC_CCU8_SLICE_MASK_t;
+
+/**
+ *  Selects which signal is controlling the delay between the change at the CCU8 outputs and effective change at the driver parity output
+ */
+typedef enum XMC_CCU8_PARITY_CHECKER_DELAY_INPUT
+{
+  XMC_CCU8_PARITY_CHECKER_DELAY_INPUT_IGBTA = 0 << CCU8_GPCHK_PCDS_Pos,
+  XMC_CCU8_PARITY_CHECKER_DELAY_INPUT_IGBTB = 1 << CCU8_GPCHK_PCDS_Pos,
+  XMC_CCU8_PARITY_CHECKER_DELAY_INPUT_IGBTC = 2 << CCU8_GPCHK_PCDS_Pos,
+  XMC_CCU8_PARITY_CHECKER_DELAY_INPUT_IGBTD = 3 << CCU8_GPCHK_PCDS_Pos
+} XMC_CCU8_PARITY_CHECKER_DELAY_INPUT_t;
+
+
+/**
+ *  Selects which signal contains the driver parity information
+ */
+typedef enum XMC_CCU8_PARITY_CHECKER_DRIVER_INPUT
+{
+  XMC_CCU8_PARITY_CHECKER_DRIVER_INPUT_SLICE_0 = 0 << CCU8_GPCHK_PISEL_Pos,
+  XMC_CCU8_PARITY_CHECKER_DRIVER_INPUT_SLICE_1 = 1 << CCU8_GPCHK_PISEL_Pos,
+  XMC_CCU8_PARITY_CHECKER_DRIVER_INPUT_SLICE_2 = 2 << CCU8_GPCHK_PISEL_Pos,
+  XMC_CCU8_PARITY_CHECKER_DRIVER_INPUT_SLICE_3 = 3 << CCU8_GPCHK_PISEL_Pos,
+} XMC_CCU8_PARITY_CHECKER_DRIVER_INPUT_t;
+
+/**
+ *  Selects if we have an odd or even parity
+ */
+typedef enum XMC_CCU8_PARITY_CHECKER_TYPE
+{
+  XMC_CCU8_PARITY_CHECKER_TYPE_EVEN = 0 << CCU8_GPCHK_PCTS_Pos,
+  XMC_CCU8_PARITY_CHECKER_TYPE_ODD = 1 << CCU8_GPCHK_PCTS_Pos,
+} XMC_CCU8_PARITY_CHECKER_TYPE_t;
+
+/**
+ *  Selects suspend mode
+ */
+typedef enum XMC_CCU8_SUSPEND_MODE
+{
+  XMC_CCU8_SUSPEND_MODE_IGNORE = 0 << CCU8_GCTRL_SUSCFG_Pos, /**< Suspend request ignored. The module never enters in suspend */
+  XMC_CCU8_SUSPEND_MODE_STOPS_INMEDIATELLY = 1 << CCU8_GCTRL_SUSCFG_Pos, /**< Stops all the running slices immediately. Safe stop is not applied. */
+  XMC_CCU8_SUSPEND_MODE_SAFE_STOP = 2 << CCU8_GCTRL_SUSCFG_Pos, /**< Stops the block immediately and clamps all the outputs to PASSIVE state. Safe stop is applied. */
+  XMC_CCU8_SUSPEND_MODE_WAIT_ROLL_OVER = 3 << CCU8_GCTRL_SUSCFG_Pos /**< Waits for the roll over of each slice to stop and clamp the slices outputs. Safe stop is applied. */
+} XMC_CCU8_SUSPEND_MODE_t;
 
 /*********************************************************************************************************************
  * DATA STRUCTURES
@@ -1098,7 +1153,6 @@ void XMC_CCU8_DisableModule(XMC_CCU8_MODULE_t *const module);
  */
 void XMC_CCU8_SetModuleClock(XMC_CCU8_MODULE_t *const module, const XMC_CCU8_CLOCK_t clock);
 
-
 /**
  * @param module Constant pointer to CCU8 module
  * @return <BR>
@@ -1117,7 +1171,25 @@ void XMC_CCU8_SetModuleClock(XMC_CCU8_MODULE_t *const module, const XMC_CCU8_CLO
 __STATIC_INLINE void XMC_CCU8_StartPrescaler(XMC_CCU8_MODULE_t *const module)
 {
   XMC_ASSERT("XMC_CCU8_StartPrescaler:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
-  module->GIDLC |= (uint32_t) CCU8_GIDLC_SPRB_Msk;
+  module->GIDLC = (uint32_t) CCU8_GIDLC_SPRB_Msk;
+}
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @return <BR>
+ *    None<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Starts the parity function.<br>\n
+ * Invoke this  API after XMC_CCU8_Init()
+ *
+ * \par<b>Related APIs:</b><br>
+ * XMC_CCU8_Init()<BR>  XMC_CCU8_EnableClock()<BR>  XMC_CCU8_DisableClock()<BR> XMC_CCU8_StopParityChecker().
+ */
+__STATIC_INLINE void XMC_CCU8_StartParityChecker(XMC_CCU8_MODULE_t *const module)
+{
+  XMC_ASSERT("XMC_CCU8_StartParityChecker:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
+  module->GIDLC = (uint32_t) CCU8_GIDLC_SPCH_Msk;
 }
 
 /**
@@ -1136,7 +1208,24 @@ __STATIC_INLINE void XMC_CCU8_StartPrescaler(XMC_CCU8_MODULE_t *const module)
 __STATIC_INLINE void XMC_CCU8_StopPrescaler(XMC_CCU8_MODULE_t *const module)
 {
   XMC_ASSERT("XMC_CCU8_StopPrescaler:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
-  module->GIDLS |= (uint32_t) CCU8_GIDLS_CPRB_Msk;
+  module->GIDLS = (uint32_t) CCU8_GIDLS_CPRB_Msk;
+}
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @return <BR>
+ *    None<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Stops the parity function.<br>\n
+ *
+ * \par<b>Related APIs:</b><br>
+ * XMC_CCU8_EnableClock()<BR>  XMC_CCU8_DisableClock()<BR>  XMC_CCU8_StartParityChecker()<BR>
+ */
+__STATIC_INLINE void XMC_CCU8_StopParityChecker(XMC_CCU8_MODULE_t *const module)
+{
+  XMC_ASSERT("XMC_CCU8_StopParityChecker:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
+  module->GIDLS = (uint32_t) CCU8_GIDLS_CPCH_Msk;
 }
 
 /**
@@ -1155,6 +1244,23 @@ __STATIC_INLINE bool XMC_CCU8_IsPrescalerRunning(XMC_CCU8_MODULE_t *const module
 {
   XMC_ASSERT("XMC_CCU8_IsPrescalerRunning:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
   return((bool)((module->GSTAT & (uint32_t) CCU8_GSTAT_PRB_Msk) == CCU8_GSTAT_PRB_Msk));
+}
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @return <BR>
+ *    None<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Returns the state of the parity checker.\n\n
+ *
+ * \par<b>Related APIs:</b><br>
+ * XMC_CCU8_StartParityChecker()<BR>  XMC_CCU8_StopParityChecker()<BR> XMC_CCU8_EnableClock()<BR>  XMC_CCU8_DisableClock().
+ */
+__STATIC_INLINE bool XMC_CCU8_IsParityCheckerRunning(XMC_CCU8_MODULE_t *const module)
+{
+  XMC_ASSERT("XMC_CCU8_IsPrescalerRunning:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
+  return((bool)((module->GSTAT & (uint32_t) CCU8_GSTAT_PCRB_Msk) == CCU8_GSTAT_PCRB_Msk));
 }
 
 /**
@@ -1179,7 +1285,25 @@ __STATIC_INLINE void XMC_CCU8_EnableMultipleClocks(XMC_CCU8_MODULE_t *const modu
   XMC_ASSERT("XMC_CCU8_EnableMultipleClocks:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
   XMC_ASSERT("XMC_CCU8_EnableMultipleClocks:Invalid clock mask", (clock_mask < 16U));
 
-  module->GIDLC |= (uint32_t) clock_mask;
+  module->GIDLC = (uint32_t) clock_mask;
+}
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @param mode   Selects suspend mode
+ * @return <BR>
+ *    None<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Configures the entering in suspend mode for all the CCU8 slices.
+ *
+ * \par<b>Related APIs:</b><br>
+ * None.
+ */
+__STATIC_INLINE void XMC_CCU8_SetSuspendMode(XMC_CCU8_MODULE_t *const module, const XMC_CCU8_SUSPEND_MODE_t mode)
+{
+  XMC_ASSERT("XMC_CCU8_EnableMultipleClocks:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
+  module->GCTRL = (module->GCTRL & (uint32_t)~CCU8_GCTRL_SUSCFG_Msk) | mode;
 }
 
 /**
@@ -1240,7 +1364,7 @@ __STATIC_INLINE void XMC_CCU8_EnableClock(XMC_CCU8_MODULE_t *const module, const
   XMC_ASSERT("XMC_CCU8_EnableClock:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
   XMC_ASSERT("XMC_CCU8_EnableClock:Invalid Slice Number", (slice_number < 4U));
 
-  module->GIDLC |= ((uint32_t) 1 << slice_number);
+  module->GIDLC = ((uint32_t) 1 << slice_number);
 }
 
 /**
@@ -1264,7 +1388,129 @@ __STATIC_INLINE void XMC_CCU8_DisableClock(XMC_CCU8_MODULE_t *const module, cons
   XMC_ASSERT("XMC_CCU8_DisableClock:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
   XMC_ASSERT("XMC_CCU8_DisableClock:Invalid Slice Number", (slice_number < 4U));
 
-  module->GIDLS |= ((uint32_t) 1 << slice_number);
+  module->GIDLS = ((uint32_t) 1 << slice_number);
+}
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @param slice_number Slice for which the clock should be disabled.
+ *                   Range: [0x0 to 0x3]
+ * @param output Slice output.
+ * @return <BR>
+ *    None<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Enables slice outputs to be used to perform the parity check. 
+ *
+ * \par<b>Related APIs:</b><br>
+ * XMC_CCU8_StartParityChecker()<BR>  XMC_CCU8_SLICE_ParityCheckerDisableSliceOutput()<BR>
+ */
+__STATIC_INLINE void XMC_CCU8_SLICE_ParityCheckerEnableSliceOutput(XMC_CCU8_MODULE_t *const module, const uint8_t slice_number, XMC_CCU8_SLICE_OUTPUT_t output)
+{
+  XMC_ASSERT("XMC_CCU8_SLICE_ParityCheckerEnableSliceOutput:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
+  XMC_ASSERT("XMC_CCU8_SLICE_ParityCheckerEnableSliceOutput:Invalid Slice Number", (slice_number < 4U));
+
+  module->GPCHK |= (uint32_t)(((output & (1 << slice_number)) << CCU8_GPCHK_PCSEL0_Pos) |
+                              ((output & (2 << slice_number)) << CCU8_GPCHK_PCSEL1_Pos) |
+                              ((output & (4 << slice_number)) << CCU8_GPCHK_PCSEL2_Pos) |
+                              ((output & (8 << slice_number)) << CCU8_GPCHK_PCSEL3_Pos));
+}
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @param slice_number Slice for which the clock should be disabled.
+ *                   Range: [0x0 to 0x3]
+ * @param output Slice output ::XMC_CCU8_SLICE_OUTPUT_t.
+ * @return <BR>
+ *    None<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Enables slice outputs to be used to perform the parity check. 
+ *
+ * \par<b>Related APIs:</b><br>
+ * XMC_CCU8_StartParityChecker()<BR>  XMC_CCU8_SLICE_ParityCheckerEnableSliceOutput()<BR>
+ */
+__STATIC_INLINE void XMC_CCU8_SLICE_ParityCheckerDisableSliceOutput(XMC_CCU8_MODULE_t *const module, const uint8_t slice_number, XMC_CCU8_SLICE_OUTPUT_t output)
+{
+  XMC_ASSERT("XMC_CCU8_SLICE_ParityCheckerEnableSliceOutput:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
+  XMC_ASSERT("XMC_CCU8_SLICE_ParityCheckerDisableSliceOutput:Invalid Slice Number", (slice_number < 4U));
+
+  module->GPCHK &= (uint32_t)~(((output & (1 << slice_number)) << CCU8_GPCHK_PCSEL0_Pos) |
+                               ((output & (2 << slice_number)) << CCU8_GPCHK_PCSEL1_Pos) |
+                               ((output & (4 << slice_number)) << CCU8_GPCHK_PCSEL2_Pos) |
+                               ((output & (8 << slice_number)) << CCU8_GPCHK_PCSEL3_Pos));
+}
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @param input signal controlling the delay between the change at the CCU8 outputs and effective change at the driver parity output ::XMC_CCU8_PARITY_CHECKER_DELAY_INPUT_t.
+ * @return <BR>
+ *    None<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Selects which signal is controlling the delay between the change at the CCU8 outputs and effective change at the driver parity output
+ *
+ * \par<b>Related APIs:</b><br>
+ * XMC_CCU8_StartParityChecker()<BR>
+ */
+__STATIC_INLINE void XMC_CCU8_SLICE_ParityCheckerSetDelayInput(XMC_CCU8_MODULE_t *const module, const XMC_CCU8_PARITY_CHECKER_DELAY_INPUT_t input)
+{
+  XMC_ASSERT("XMC_CCU8_SLICE_ParityCheckerSetDelayInput:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
+  module->GPCHK = (module->GPCHK & (uint32_t)~CCU8_GPCHK_PCDS_Msk) | input;
+}
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @param input signal contains the driver parity information ::XMC_CCU8_PARITY_CHECKER_DRIVER_INPUT_t.
+ * @return <BR>
+ *    None<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Selects which signal contains the driver parity information.
+ * The signal must be selected throughout the input selector mux of each slice. The signal must be mapped to the Event 1 of a slice using XMC_CCU8_SLICE_SetInput()
+ *
+ * \par<b>Related APIs:</b><br>
+ * XMC_CCU8_StartParityChecker(), XMC_CCU8_SLICE_SetInput()<BR>.
+ */
+__STATIC_INLINE void XMC_CCU8_SLICE_ParityCheckerSetDriverInput(XMC_CCU8_MODULE_t *const module, const XMC_CCU8_PARITY_CHECKER_DRIVER_INPUT_t input)
+{
+  XMC_ASSERT("XMC_CCU8_SLICE_ParityCheckerSetDelayInput:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
+  module->GPCHK = (module->GPCHK & (uint32_t)~CCU8_GPCHK_PISEL_Msk) | input;
+}
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @param type odd or even parity ::XMC_CCU8_PARITY_CHECKER_TYPE_t.
+ * @return <BR>
+ *    None<BR>
+ *
+ * \par<b>Description:</b><br>
+ * Selects if we have an odd or even parity.
+ *
+ * \par<b>Related APIs:</b><br>
+ * XMC_CCU8_StartParityChecker()<BR>.
+ */
+__STATIC_INLINE void XMC_CCU8_SLICE_ParityCheckerSetType(XMC_CCU8_MODULE_t *const module, const XMC_CCU8_PARITY_CHECKER_TYPE_t type)
+{
+  XMC_ASSERT("XMC_CCU8_SLICE_ParityCheckerSetDelayInput:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
+  module->GPCHK = (module->GPCHK & (uint32_t)~CCU8_GPCHK_PCTS_Msk) | type;
+}
+
+
+/**
+ * @param module Constant pointer to CCU8 module
+ * @return status of parity checker. If >0 then an error is dectected
+ *
+ * \par<b>Description:</b><br>
+ * Returns current value of the XOR chain.
+ *
+ * \par<b>Related APIs:</b><br>
+ * XMC_CCU8_StartParityChecker()<BR>
+ */
+__STATIC_INLINE uint32_t XMC_CCU8_SLICE_ParityCheckerGetStatus(XMC_CCU8_MODULE_t *const module)
+{
+  XMC_ASSERT("XMC_CCU8_SLICE_ParityCheckerSetDelayInput:Invalid Module Pointer", XMC_CCU8_IsValidModule(module));
+  return (module->GPCHK & CCU8_GPCHK_PCST_Msk);
 }
 
 /**
@@ -2060,6 +2306,40 @@ uint16_t XMC_CCU8_SLICE_GetTimerCompareMatch(const XMC_CCU8_SLICE_t *const slice
                                              const XMC_CCU8_SLICE_COMPARE_CHANNEL_t channel);
 
 /**
+ * @param slice Constant pointer to CC8 Slice
+ * @return 
+ *    uint16_t Timer compare value
+ *
+ * \par<b>Description:</b><br>
+ * Gets the timer compare1 value, by reading CC8yCR1 register.\n\n
+ *
+ * \par<b>Related APIs:</b><br>
+ *  XMC_CCU8_SLICE_SetTimerCompareMatchChannel1().
+ */
+__STATIC_INLINE uint16_t XMC_CCU8_SLICE_GetTimerCompareMatchChannel1(XMC_CCU8_SLICE_t *const slice)
+{
+  XMC_ASSERT("XMC_CCU8_SLICE_GetTimerCompareMatchChannel1:Invalid Slice Pointer", XMC_CCU8_IsValidSlice(slice));
+  return slice->CR1;
+}
+
+/**
+ * @param slice Constant pointer to CC8 Slice
+ * @return Timer compare value
+ *    uint16_t Timer compare value
+ *
+ * \par<b>Description:</b><br>
+ * Gets the timer compare1 value, by reading CC8yCR2 register.\n\n
+ *
+ * \par<b>Related APIs:</b><br>
+ *  XMC_CCU8_SLICE_SetTimerCompareMatchChannel2().
+ */
+__STATIC_INLINE uint16_t XMC_CCU8_SLICE_GetTimerCompareMatchChannel2(XMC_CCU8_SLICE_t *const slice)
+{
+  XMC_ASSERT("XMC_CCU8_SLICE_SetTimerCompareMatchChannel2:Invalid Slice Pointer", XMC_CCU8_IsValidSlice(slice));
+  return slice->CR2;
+}
+
+/**
  * @param module Constant pointer to CCU8 module
  * @param shadow_transfer_msk Shadow transfer request mask for various transfers.
  *                            Use ::XMC_CCU8_SHADOW_TRANSFER_t enum items to create a mask of choice,
@@ -2253,6 +2533,25 @@ __STATIC_INLINE void XMC_CCU8_SLICE_SetDitherCompareValue(XMC_CCU8_SLICE_t *cons
  *  XMC_CCU8_SLICE_SetFloatingPrescalerCompareValue().
  */
 void XMC_CCU8_SLICE_SetPrescaler(XMC_CCU8_SLICE_t *const slice, const XMC_CCU8_SLICE_PRESCALER_t div_val);
+
+/**
+ * @param slice Constant pointer to CC8 Slice
+ * @return <BR>
+ *    XMC_CCU8_SLICE_PRESCALER_t Prescaler divider value. <BR>
+ *
+ * \par<b>Description:</b><br>
+ * Returns current prescaler value.\n\n
+ * Used to detrmine the clock frequency of the CCU8 slice XMC_SCU_CLOCK_GetCcuClockFrequency() / XMC_CCU8_SLICE_GetPrescaler()
+ *
+ * \par<b>Related APIs:</b><br>
+ *  XMC_CCU8_SLICE_SetPrescaler().
+ */
+__STATIC_INLINE XMC_CCU8_SLICE_PRESCALER_t XMC_CCU8_SLICE_GetPrescaler(XMC_CCU8_SLICE_t *const slice)
+{
+  XMC_ASSERT("XMC_CCU8_SLICE_SetPrescaler:Invalid Slice Pointer", XMC_CCU8_IsValidSlice(slice));
+
+  return (XMC_CCU8_SLICE_PRESCALER_t)slice->PSC;
+}
 
 /**
  * @param slice Constant pointer to CC8 Slice
@@ -2498,7 +2797,7 @@ __STATIC_INLINE void XMC_CCU8_SLICE_SetEvent(XMC_CCU8_SLICE_t *const slice, cons
   XMC_ASSERT("XMC_CCU8_SLICE_SetEvent:Invalid Slice Pointer", XMC_CCU8_IsValidSlice(slice));
   XMC_ASSERT("XMC_CCU8_SLICE_SetEvent:Invalid SR event", XMC_CCU8_SLICE_CHECK_INTERRUPT(event));
 
-  slice->SWS |= ((uint32_t) 1) << ((uint32_t) event);
+  slice->SWS = ((uint32_t) 1) << ((uint32_t) event);
 }
 
 /**
@@ -2518,7 +2817,7 @@ __STATIC_INLINE void XMC_CCU8_SLICE_ClearEvent(XMC_CCU8_SLICE_t *const slice, co
 {
   XMC_ASSERT("XMC_CCU8_SLICE_ClearEvent:Invalid Slice Pointer", XMC_CCU8_IsValidSlice(slice));
   XMC_ASSERT("XMC_CCU8_SLICE_ClearEvent:Invalid SR event", XMC_CCU8_SLICE_CHECK_INTERRUPT(event));
-  slice->SWR |= ((uint32_t) 1) << ((uint32_t) event);
+  slice->SWR = ((uint32_t) 1) << ((uint32_t) event);
 }
 
 /**
@@ -2803,7 +3102,7 @@ __STATIC_INLINE void XMC_CCU8_SLICE_SetShadowTransferMode(XMC_CCU8_SLICE_t *cons
                                                           const XMC_CCU8_SLICE_SHADOW_TRANSFER_MODE_t shadow_transfer_mode)
 {
   XMC_ASSERT("XMC_CCU8_SLICE_SetShadowTransferMode:Invalid Slice Pointer", XMC_CCU8_IsValidSlice(slice));
-  slice->STC = ((slice->STC) & ~(uint32_t)((uint32_t)CCU8_CC8_STC_STM_Msk << (uint32_t)CCU8_CC8_STC_STM_Pos)) |
+  slice->STC = ((slice->STC) & (uint32_t)~CCU8_CC8_STC_STM_Msk) |
                ((shadow_transfer_mode << CCU8_CC8_STC_STM_Pos) & (uint32_t)CCU8_CC8_STC_STM_Msk);
 }
 #endif
@@ -2913,6 +3212,7 @@ __STATIC_INLINE void XMC_CCU8_SLICE_DisableAutomaticShadowTransferRequest(XMC_CC
   slice->STC &= ~(uint32_t)automatic_shadow_transfer;
 }
 #endif
+
 #ifdef __cplusplus
 }
 #endif

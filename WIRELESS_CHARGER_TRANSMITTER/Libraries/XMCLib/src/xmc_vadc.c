@@ -1,12 +1,12 @@
 /**
  * @file xmc_vadc.c
- * @date 2016-06-17
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -89,6 +89,15 @@
  * 2017-01-11:
  *     - Fix assertion in XMC_VADC_GROUP_CheckSlaveReadiness() and XMC_VADC_GROUP_IgnoreSlaveReadiness() checking the slave_group parameter
  *
+ * 2018-06-26:
+ *     - Fixed XMC_VADC_GLOBAL_StartupCalibration(), added wait until calibration is started
+ *
+ * 2019-03-30:
+ *     - Changed XMC_VADC_GROUP_SetChannelAlias() to inline function
+ *
+ * 2019-05-07:
+ *     - Fix compilation warnings
+ * 
  * @endcond 
  *
  */
@@ -245,6 +254,7 @@ void XMC_VADC_GLOBAL_InputClassInit(XMC_VADC_GLOBAL_t *const global_ptr, const X
   if (conv_type == XMC_VADC_GROUP_CONV_STD )
   {
 #endif
+	XMC_UNUSED_ARG(conv_type);
     global_ptr->GLOBICLASS[set_num] = config.globiclass &
                                       (uint32_t)(VADC_GLOBICLASS_CMS_Msk | VADC_GLOBICLASS_STCS_Msk);
 #if(XMC_VADC_EMUX_AVAILABLE == 1U)
@@ -278,16 +288,23 @@ void XMC_VADC_GLOBAL_StartupCalibration(XMC_VADC_GLOBAL_t *const global_ptr)
       /* This group is active. Loop until it finishes calibration */
       while((group_ptr->ARBCFG) & (uint32_t)VADC_G_ARBCFG_CAL_Msk)
       {
-        /* NOP */
+        __NOP();
       }
     }
   }
 #else
+
+  /* Loop until calibration is started */
+  while ((((SHS0->SHSCFG) & (uint32_t)SHS_SHSCFG_STATE_Msk) >> (uint32_t)SHS_SHSCFG_STATE_Pos) !=
+		  XMC_VADC_SHS_START_UP_CAL_ACTIVE  )
+   {
+     __NOP();
+   }
   /* Loop until it finishes calibration */
   while ((((SHS0->SHSCFG) & (uint32_t)SHS_SHSCFG_STATE_Msk) >> (uint32_t)SHS_SHSCFG_STATE_Pos) ==
          XMC_VADC_SHS_START_UP_CAL_ACTIVE )
   {
-    /* NOP */
+    __NOP();
   }
 #endif
 }
@@ -573,7 +590,7 @@ void XMC_VADC_GROUP_CheckSlaveReadiness(XMC_VADC_GROUP_t *const group_ptr, uint3
 {
   uint32_t i,master_grp_num;
   XMC_ASSERT("XMC_VADC_GROUP_CheckSlaveReadiness:Wrong Group Pointer", XMC_VADC_CHECK_GROUP_PTR(group_ptr))
-  XMC_ASSERT("XMC_VADC_GROUP_CheckSlaveReadiness:Wrong Slave group", ((slave_group >= 0) && (slave_group <= (XMC_VADC_MAXIMUM_NUM_GROUPS - 1))))
+  XMC_ASSERT("XMC_VADC_GROUP_CheckSlaveReadiness:Wrong Slave group", (slave_group <= (XMC_VADC_MAXIMUM_NUM_GROUPS - 1)))
 
   master_grp_num =0;
   for(i=0; i<XMC_VADC_MAXIMUM_NUM_GROUPS; i++)
@@ -597,7 +614,7 @@ void XMC_VADC_GROUP_IgnoreSlaveReadiness(XMC_VADC_GROUP_t *const group_ptr, uint
 {
   uint32_t i,master_grp_num;
   XMC_ASSERT("XMC_VADC_GROUP_IgnoreSlaveReadiness:Wrong Group Pointer", XMC_VADC_CHECK_GROUP_PTR(group_ptr))
-  XMC_ASSERT("XMC_VADC_GROUP_IgnoreSlaveReadiness:Wrong Slave group", ((slave_group >= 0) && (slave_group <= (XMC_VADC_MAXIMUM_NUM_GROUPS - 1))))
+  XMC_ASSERT("XMC_VADC_GROUP_IgnoreSlaveReadiness:Wrong Slave group", (slave_group <= (XMC_VADC_MAXIMUM_NUM_GROUPS - 1)))
 
   master_grp_num =0;
   for(i=0; i<XMC_VADC_MAXIMUM_NUM_GROUPS; i++)
@@ -621,7 +638,7 @@ void XMC_VADC_GROUP_SetSyncSlaveReadySignal(XMC_VADC_GROUP_t *const group_ptr,
                                             uint32_t eval_origin_group)
 {
   XMC_ASSERT("XMC_VADC_GROUP_SetSyncSlaveReadySignal:Wrong Group Pointer", XMC_VADC_CHECK_GROUP_PTR(group_ptr))
-  XMC_ASSERT("XMC_VADC_GROUP_SetSyncSlaveReadySignal:Wrong Group numbers", (eval_waiting_group == eval_origin_group ))
+  XMC_ASSERT("XMC_VADC_GROUP_SetSyncSlaveReadySignal:Wrong Group numbers", (eval_waiting_group != eval_origin_group ))
 
   if(eval_origin_group < eval_waiting_group)
   {
@@ -1694,37 +1711,6 @@ void XMC_VADC_GROUP_ChannelInit(XMC_VADC_GROUP_t *const group_ptr, const uint32_
   /* Program the CHCTR register */
   group_ptr->CHCTR[ch_num] = config->chctr;
 
-}
-
-/* API to set an alias channel for channels numbered 2 through 7 */
-void XMC_VADC_GROUP_SetChannelAlias(XMC_VADC_GROUP_t *const group_ptr,
-                                    const uint32_t src_ch_num,
-                                    const uint32_t alias_ch_num)
-{
-  uint32_t alias;
-  uint32_t mask;
-  uint32_t pos;
-
-  XMC_ASSERT("XMC_VADC_GROUP_SetChannelAlias:Wrong Group Pointer", XMC_VADC_CHECK_GROUP_PTR(group_ptr))
-  XMC_ASSERT("XMC_VADC_GROUP_SetChannelAlias:Wrong Alias Channel", ((alias_ch_num == 0)|| (alias_ch_num == 1U)))
-  XMC_ASSERT("XMC_VADC_GROUP_SetChannelAlias:Wrong Aliased Channel", ((src_ch_num < 8U)))
-
-  alias = group_ptr->ALIAS;
-
-  if (0U == alias_ch_num)
-  {
-    mask = (uint32_t) VADC_G_ALIAS_ALIAS0_Msk;
-    pos  = (uint32_t) VADC_G_ALIAS_ALIAS0_Pos;
-  }
-  else
-  {
-    mask = (uint32_t) VADC_G_ALIAS_ALIAS1_Msk;
-    pos  = (uint32_t) VADC_G_ALIAS_ALIAS1_Pos;
-  }
-  alias &= ~mask;
-  alias |= (uint32_t)(src_ch_num << pos);
-
-  group_ptr->ALIAS = alias;
 }
 
 /* API to determine whether input to a channel has violated boundary conditions */

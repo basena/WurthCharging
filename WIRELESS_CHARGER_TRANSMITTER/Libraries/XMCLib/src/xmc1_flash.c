@@ -1,12 +1,12 @@
 /**
  * @file xmc1_flash.c
- * @date 2015-10-14
+ * @date 2019-05-04
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -45,6 +45,10 @@
  * 2015-10-14: 
  *     - Fixed defect in API XMC_FLASH_ErasePages, related to the errata NVM_CM.001
  *     - NVM ROM user routine XMC1000_NvmErasePage(address) used for erase page. 
+ *
+ * 2019-05-04:
+ *     - Changed XMC_FLASH_ErasePage() and XMC_FLASH_ProgramVerifyPage() to return status of operation
+ *     - Changed XMC_FLASH_ErasePages(), XMC_FLASH_EraseSector() and XMC_FLASH_ProgramPage() to return status of operation
  *
  * @endcond 
  *
@@ -111,14 +115,14 @@ void XMC_FLASH_DisableEvent(const uint32_t event_msk)
   NVM->NVMCONF &= (uint16_t)(~(uint16_t)event_msk);
 }
 
-void XMC_FLASH_ErasePage(uint32_t *address)
+int32_t XMC_FLASH_ErasePage(uint32_t *address)
 {
-  (void)XMC1000_NvmErasePage(address);
+  return XMC1000_NvmErasePage(address);
 }
 
-void XMC_FLASH_ProgramVerifyPage(uint32_t *address, const uint32_t *data)
+int32_t XMC_FLASH_ProgramVerifyPage(uint32_t *address, const uint32_t *data)
 {
-  (void)XMC1000_NvmProgVerify(data, address);
+  return XMC1000_NvmProgVerify(data, address);
 }
 
 /* Write blocks of data into flash*/
@@ -162,25 +166,27 @@ void XMC_FLASH_WriteBlocks(uint32_t *address, const uint32_t *data, uint32_t num
 }
 
 /* Erase flash pages */
-void XMC_FLASH_ErasePages(uint32_t *address, uint32_t num_pages)
+int32_t XMC_FLASH_ErasePages(uint32_t *address, uint32_t num_pages)
 {
   uint32_t page;
 
   XMC_ASSERT("XMC_FLASH_ErasePages: Starting address not aligned to Page",
                                                                     ((uint32_t)address & FLASH_PAGE_ADDR_MASK) == 0U)
 
+  int32_t status;
   for (page = 0U; page < num_pages; ++page)
   {
-    (void)XMC1000_NvmErasePage(address);
-
-    while (XMC_FLASH_IsBusy() == true)
+    status = XMC1000_NvmErasePage(address);
+    if (status != NVM_PASS)
     {
+      return status;
     }
 
     /* Increment the page address for the next erase */
     address += XMC_FLASH_WORDS_PER_PAGE;
-
   }
+
+  return status;
 
 }
 
@@ -238,17 +244,17 @@ void XMC_FLASH_ReadBlocks(uint32_t *address, uint32_t *data, uint32_t num_blocks
 }
 
 /* Erase single sector */
-void XMC_FLASH_EraseSector(uint32_t *address)
+int32_t XMC_FLASH_EraseSector(uint32_t *address)
 {
   XMC_ASSERT("XMC_FLASH_EraseSector: Starting address not aligned to Sector",
                                                                  ((uint32_t)address & FLASH_SECTOR_ADDR_MASK) == 0U)
-  XMC_FLASH_ErasePages(address, XMC_FLASH_PAGES_PER_SECTOR);
+  return XMC_FLASH_ErasePages(address, XMC_FLASH_PAGES_PER_SECTOR);
 }
 
 /* Program single page */
-void XMC_FLASH_ProgramPage(uint32_t *address, const uint32_t *data)
+int32_t XMC_FLASH_ProgramPage(uint32_t *address, const uint32_t *data)
 {
-  XMC_FLASH_ProgramVerifyPage(address, data);
+  return XMC_FLASH_ProgramVerifyPage(address, data);
 }
 
 #endif

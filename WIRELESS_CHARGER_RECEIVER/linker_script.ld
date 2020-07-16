@@ -7,6 +7,7 @@
  * Linker file for the GNU C Compiler v1.11
  * Supported devices: XMC1301-T038F0064
  *                    XMC1302-T038X0064
+ *                    XMC1302-T028X0064
  *                    XMC1302-Q024F0064
  *                    XMC1302-Q024X0064
  *                    XMC1302-Q040X0064

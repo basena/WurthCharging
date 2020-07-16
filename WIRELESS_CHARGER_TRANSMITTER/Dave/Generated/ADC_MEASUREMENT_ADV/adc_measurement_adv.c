@@ -7,10 +7,10 @@
  *
  * @cond
  ***********************************************************************************************************************
- * ADC_MEASUREMENT_ADV v4.0.14 - Incorporates advanced features of the Versatile Analog to Digital Converter
+ * ADC_MEASUREMENT_ADV v4.0.18 - Incorporates advanced features of the Versatile Analog to Digital Converter
  *                               to measure analog inputs.
  *
- * Copyright (c) 2015-2016, Infineon Technologies AG
+ * Copyright (c) 2015-2018, Infineon Technologies AG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the

@@ -1,12 +1,12 @@
 /**
  * @file xmc_flash.h
- * @date 2015-06-20
+ * @date 2019-05-06
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -42,6 +42,8 @@
  *     - Updated for Documentation related changes<br>
  * 2015-06-20: 
  *     - Removed version macros and declaration of GetDriverVersion API 
+ * 2019-05-06:
+ *     - Moved definitions of XMC_FLASH_ProgramPage() and XMC_FLASH_EraseSector() to xmc1_flash.h and xmc4_flash.h
  * @endcond 
  *
  */
@@ -178,68 +180,6 @@ void XMC_FLASH_EnableEvent(const uint32_t event_msk);
  *
  */
 void XMC_FLASH_DisableEvent(const uint32_t event_msk);
-
-/**
- *
- * @param address    Pointer to the starting address of flash page from where the programming starts.
- * @param data       Pointer to the source address where targeted data is located.
- *
- * @return None
- *
- * \par<b>Description:</b><br>
- * \if XMC1
- * Programs a single flash page associated with the specified \a address.\n\n XMC1000 Flash can be programmed with one
- * page (256 bytes) using this API. It calls the Flash Firmware routine \a XMC1000_NvmProgVerify(unsigned long pageAddr)
- * to perform the programming. Refer XMC1000 reference manual of for more details on flash firmware routines
- * (Section 25.3). Call XMC_FLASH_GetStatus() API after calling this API, to verify the programming operation.
- * \endif
- * \if XMC4
- * Programs a single flash page associated with the specified \a address.\n\n  XMC4000 flash can be programmed with a
- * granularity of 256 bytes page using this API. Before entering into page write process, it clears the error status
- * bits inside status register. It starts the write process by issuing the page mode command followed by the load page
- * command which loads the targeted \a data blocks into internal assembly buffer. Finally, it issues the write page
- * command which programs the \a data into flash. Call XMC_FLASH_GetStatus() API after calling this API, to verify the
- * programming operation.\n
- * \endif
- *
- * \par<b>Note:</b><br>
- * Flash will be busy state during write is ongoing, hence no operations allowed until it completes.
- *
- * \par<b>Related APIs:</b><BR>
- * None 
- *
- */
-void XMC_FLASH_ProgramPage(uint32_t *address, const uint32_t *data);
-
-/**
- *
- * @param address Pointer to the starting address of the page to be erased.
- *
- * @return None
- *
- * \par<b>Description:</b><br>
- * \if XMC1
- * Erases a complete sector starting from the \a address specified.\n\n  XMC1000 Flash can be erased with granularity
- * of one page = 16 blocks of 16 Bytes = 256 Bytes using this API. It internally calls XMC_FLASH_ErasePages API 16
- * times starting from the first page of the sector.. Call XMC_FLASH_GetStatus() API after calling this API,
- * to verify the erase operation.\n
- * \endif
- *
- * \if XMC4
- * Erases a sector associated with the specified \a address.\n\n  Before erase, it clears the error status bits inside
- * FSR status register. Issues the erase sector command sequence with the specified starting \a address to start flash
- * erase process. Call XMC_FLASH_GetStatus() API after calling this API, to verify the erase operation.\n
- * \endif
- * \if XMC1
- * \par<b>Related APIs:</b><BR>
- * XMC_FLASH_ErasePages() \n\n\n
- * \endif
- * \if XMC4
- * \par<b>Related APIs:</b><BR>
- * None
- * \endif
- */
-void XMC_FLASH_EraseSector(uint32_t *address);
 
 /**
  *

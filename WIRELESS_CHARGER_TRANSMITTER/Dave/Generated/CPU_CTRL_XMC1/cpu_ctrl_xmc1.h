@@ -9,9 +9,9 @@
 /**
  * @cond
  ***********************************************************************************************************************
- * CPU_CTRL_XMC1 v4.0.8 - Sets the priority grouping for NVIC
+ * CPU_CTRL_XMC1 v4.0.10 - Sets the priority grouping for NVIC
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2018, Infineon Technologies AG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the

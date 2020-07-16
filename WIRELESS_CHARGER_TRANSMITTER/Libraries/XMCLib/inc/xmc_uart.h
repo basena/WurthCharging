@@ -1,12 +1,12 @@
  /**
  * @file xmc_uart.h
- * @date 2016-05-20
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -53,6 +53,14 @@
  * 
  * 2016-05-20:
  *     - Added XMC_UART_CH_EnableDataTransmission() and XMC_UART_CH_DisableDataTransmission()
+ *
+ * 2017-10-25:
+ *     - Added XMC_UART_CH_EnableMasterClock() and XMC_UART_CH_DisableMasterClock()
+ *
+ * 2019-05-07:
+ *     - Added normal_divider_mode to XMC_UART_CH_CONFIG_t configuration structure.
+ *       It selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter at cost of frequency selection
+ *     - Added XMC_UART_CH_SetBaudrateEx()
  *
  * @endcond 
  *
@@ -216,6 +224,7 @@ typedef enum XMC_UART_CH_INTERRUPT_NODE_POINTER
 typedef struct XMC_UART_CH_CONFIG
 {
   uint32_t baudrate;                         /**< Desired baudrate. \b Range: minimum= 100, maximum= (fPERIPH * 1023)/(1024 * oversampling) */
+  bool normal_divider_mode;                  /**< Selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter at cost of frequency selection */
   uint8_t data_bits;                         /**< Number of bits for the data field. Value configured as USIC channel word length. \n
                                                   \b Range: minimum= 1, maximum= 16*/
   uint8_t frame_length;                      /**< Indicates nmber of bits in a frame. Configured as USIC channel frame length. \n 
@@ -315,9 +324,35 @@ XMC_UART_CH_STATUS_t XMC_UART_CH_Stop(XMC_USIC_CH_t *const channel);
  * a minimum oversampling of 4 for UART.
  *
  * \par<b>Related APIs:</b><BR>
- * XMC_UART_CH_Init(), XMC_UART_CH_Stop()
+ * XMC_UART_CH_Init(), XMC_UART_CH_Stop(), XMC_USIC_CH_GetBaudrate()
  */
 XMC_UART_CH_STATUS_t XMC_UART_CH_SetBaudrate(XMC_USIC_CH_t *const channel, uint32_t rate, uint32_t oversampling);
+
+/**
+ * @param channel Constant pointer to USIC channel handle of type @ref XMC_USIC_CH_t \n
+ * 				   \b Range: @ref XMC_UART0_CH0, XMC_UART0_CH1 ,XMC_UART1_CH0, XMC_UART1_CH1, XMC_UART2_CH0, XMC_UART2_CH1 @note Availability of UART1 and UART2 depends on device selection
+ * @param rate Desired baudrate. \n
+ *           \b Range: minimum value = 100, maximum value depends on the peripheral clock frequency\n
+ * 				   and \a oversampling. Maximum baudrate can be derived using the formula: (fperiph * 1023)/(1024 * oversampling)
+ * @param  oversampling Required oversampling. The value indicates the number of time quanta for one symbol of data.\n
+ * 					 This can be related to the number of samples for each logic state of the data signal.\n
+ * 					 \b Range: 4 to 32. Value should be chosen based on the protocol used.
+ * @param normal_divider_mode Selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter of signal at the cost of frequency selection
+ * @return XMC_UART_CH_STATUS_t Status indicating the baudrate configuration.\n
+ * 			     \b Range: @ref XMC_USIC_CH_STATUS_OK if baudrate is successfully configured,
+ * 					 @ref XMC_USIC_CH_STATUS_ERROR if desired baudrate or oversampling is invalid.
+ *
+ * \par<b>Description:</b><br>
+ * Sets the bus speed in bits per second.\n\n
+ * Derives the values of \a STEP and PDIV to arrive at the optimum realistic speed possible.
+ * \a oversampling is the number of samples to be taken for each symbol of UART protocol.
+ * Default \a oversampling of 16 is considered if the input \a oversampling is less than 4. It is recommended to keep
+ * a minimum oversampling of 4 for UART.
+ *
+ * \par<b>Related APIs:</b><BR>
+ * XMC_UART_CH_Init(), XMC_UART_CH_Stop(), XMC_USIC_CH_GetBaudrate()
+ */
+XMC_UART_CH_STATUS_t XMC_UART_CH_SetBaudrateEx(XMC_USIC_CH_t *const channel, uint32_t rate, uint32_t oversampling, bool normal_divider_mode);
 
 /**
  * @param channel Constant pointer to USIC channel handle of type @ref XMC_USIC_CH_t \n
@@ -604,6 +639,39 @@ __STATIC_INLINE void XMC_UART_CH_SetPulseLength(XMC_USIC_CH_t *const channel, co
 {
   channel->PCR_ASCMode = (uint32_t)(channel->PCR_ASCMode & (~USIC_CH_PCR_ASCMode_PL_Msk)) |
                          ((uint32_t)pulse_length << USIC_CH_PCR_ASCMode_PL_Pos);
+}
+
+
+/**
+ * @param channel Constant pointer to USIC channel handle of type @ref XMC_USIC_CH_t \n
+ * 				  \b Range: @ref XMC_UART0_CH0, @ref XMC_UART0_CH1,@ref XMC_UART1_CH0,@ref XMC_UART1_CH1,@ref XMC_UART2_CH0,@ref XMC_UART2_CH1 @note Availability of UART1 and UART2 depends on device selection
+ * @return None
+ *
+ * \par<b>Description</b><br>
+ * Enables the generation of the master clock MCLK.\n\n
+ * \par<b>Related APIs:</b><BR>
+ * XMC_USIC_CH_SetMclkOutputPassiveLevel()\n\n\n
+ *
+*/
+__STATIC_INLINE void XMC_UART_CH_EnableMasterClock(XMC_USIC_CH_t *const channel)
+{
+  channel->PCR_ASCMode |= USIC_CH_PCR_ASCMode_MCLK_Msk;
+}
+
+/**
+ * @param channel Constant pointer to USIC channel handle of type @ref XMC_USIC_CH_t \n
+ * 				  \b Range: @ref XMC_UART0_CH0, @ref XMC_UART0_CH1,@ref XMC_UART1_CH0,@ref XMC_UART1_CH1,@ref XMC_UART2_CH0,@ref XMC_UART2_CH1 @note Availability of UART1 and UART2 depends on device selection
+ * @return None
+ *
+ * \par<b>Description</b><br>
+ * Disables the generation of the master clock MCLK.\n\n
+ * \par<b>Related APIs:</b><BR>
+ * XMC_USIC_CH_SetMclkOutputPassiveLevel()\n\n\n
+ *
+*/
+__STATIC_INLINE void XMC_UART_CH_DisableMasterClock(XMC_USIC_CH_t *const channel)
+{
+  channel->PCR_ASCMode &= (uint32_t)~USIC_CH_PCR_ASCMode_MCLK_Msk;
 }
 
 /**

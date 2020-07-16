@@ -1,12 +1,12 @@
 /**
  * @file xmc_i2s.h
- * @date 2016-06-30
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the
@@ -56,6 +56,12 @@
  *
  * 2016-06-30:
  *     - Documentation updates.
+ *
+ * 2019-05-07:
+ *     - Added normal_divider_mode to XMC_I2S_CH_CONFIG_t configuration structure.
+ *       It selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter at cost of frequency selection
+ *     - Added XMC_I2S_CH_SetBaudrateEx()
+ *
  *
  * @endcond
  *
@@ -229,6 +235,7 @@ typedef enum XMC_I2S_CH_BUS_MODE
 typedef struct XMC_I2S_CH_CONFIG
 {
   uint32_t baudrate;					             /**< Module baud rate for communication */
+  bool normal_divider_mode;                /**< Selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter at cost of frequency selection */
   uint8_t data_bits;                       /**< Data word length. A data frame can consists of several data words. \n
                                                 Value configured as USIC channel word length. \n
                                                   \b Range: minimum= 1, maximum= 16*/
@@ -323,6 +330,23 @@ XMC_I2S_CH_STATUS_t XMC_I2S_CH_Stop(XMC_USIC_CH_t *const channel);
  * XMC_I2S_CH_Init(), XMC_I2S_CH_Stop()
  */
 XMC_I2S_CH_STATUS_t XMC_I2S_CH_SetBaudrate(XMC_USIC_CH_t *const channel, const uint32_t rate);
+
+/**
+ * @param channel A constant pointer to XMC_USIC_CH_t, pointing to the USIC channel base address.
+ * @param rate Bus speed in bits per second
+ * @param normal_divider_mode Selects normal divider mode for baudrate generator instead of default fractional divider decreasing jitter at cost of frequency selection
+ *
+ * @return XMC_I2S_CH_STATUS_t Status of the I2S driver after the request for setting baudrate is processed. \n
+ *        XMC_I2S_CH_STATUS_OK- If the baudrate is successfully changed. \n
+ *        XMC_I2S_CH_STATUS_ERROR- If the new baudrate value is out of range.
+ *
+ * \par<b>Description:</b><br>
+ * Sets the bus speed in bits per second
+ *
+ * \par<b>Related APIs:</b><BR>
+ * XMC_I2S_CH_Init(), XMC_I2S_CH_Stop()
+ */
+XMC_I2S_CH_STATUS_t XMC_I2S_CH_SetBaudrateEx(XMC_USIC_CH_t *const channel, const uint32_t rate, bool normal_divider_mode);
 
 /**
  * @param channel A constant pointer to XMC_USIC_CH_t, pointing to the USIC channel base address.

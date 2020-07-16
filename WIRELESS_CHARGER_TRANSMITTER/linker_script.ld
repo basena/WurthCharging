@@ -6,6 +6,7 @@
  *********************************************************************************************************************
  * Linker file for the GNU C Compiler v1.12
  * Supported devices: XMC1302-T038X0200
+ *                    XMC1302-T028X0200
  *                    XMC1302-Q040X0200
  *
  * Copyright (c) 2015-2017, Infineon Technologies AG
@@ -74,7 +75,7 @@ MEMORY
     SRAM(!RX) : ORIGIN = 0x20000000, LENGTH = 0x4000
 }
 
-stack_size = DEFINED(stack_size) ? stack_size : 4096;
+stack_size = DEFINED(stack_size) ? stack_size : 1024;
 no_init_size = 4;
 
 SECTIONS

@@ -1,12 +1,12 @@
 /**
  * @file xmc_vadc.h
- * @date 2017-06-24
+ * @date 2019-03-30
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -109,6 +109,15 @@
  * 2017-06-24:
  *     - Added new function XMC_VADC_GLOBAL_SHS_SetAnalogReference() for XMC1 family
  *
+ * 2017-08-14:
+ *     - Added XMC_VADC_GLOBAL_DETAILED_RESULT_t
+ *       You can cast the return of XMC_VADC_GLOBAL_GetDetailedResult() to a varible of type XMC_VADC_GLOBAL_DETAILED_RESULT_t to easily access the register bit fields
+ *     - Fixed XMC_VADC_GLOBAL_SHS_SetAnalogReference() to update AREF bitfield correctly
+ *
+ * 2019-03-30:
+ *     - Changed XMC_VADC_GROUP_SetChannelAlias() to inline function
+ *     - Added XMC_VADC_GROUP_GetChannelAlias()
+ * 
  * @endcond 
  *
  */
@@ -711,9 +720,9 @@ typedef enum XMC_VADC_CHANNEL_ALIAS
  */
 typedef enum XMC_VADC_GLOBAL_SHS_AREF
 {
-  XMC_VADC_GLOBAL_SHS_AREF_EXTERNAL_VDD_UPPER_RANGE = 0, /**< External reference, upper supply range, e.g. VDD >= 3.0V */
-  XMC_VADC_GLOBAL_SHS_AREF_INTERNAL_VDD_UPPER_RANGE = 2, /**< Internal reference, upper supply range, e.g. VDD >= 3.0V  */
-  XMC_VADC_GLOBAL_SHS_AREF_INTERNAL_VDD_LOWER_RANGE = 3, /**< Internal reference, lower supply range, e.g. VDD <  3.0V  */
+  XMC_VADC_GLOBAL_SHS_AREF_EXTERNAL_VDD_UPPER_RANGE = 0 << SHS_SHSCFG_AREF_Pos, /**< External reference, upper supply range, e.g. VDD >= 3.0V */
+  XMC_VADC_GLOBAL_SHS_AREF_INTERNAL_VDD_UPPER_RANGE = 2 << SHS_SHSCFG_AREF_Pos, /**< Internal reference, upper supply range, e.g. VDD >= 3.0V  */
+  XMC_VADC_GLOBAL_SHS_AREF_INTERNAL_VDD_LOWER_RANGE = 3 << SHS_SHSCFG_AREF_Pos, /**< Internal reference, lower supply range, e.g. VDD <  3.0V  */
 } XMC_VADC_GLOBAL_SHS_AREF_t;
 
 #if(XMC_VADC_SHS_FULL_SET_REG == 1U)
@@ -1302,10 +1311,33 @@ typedef struct XMC_VADC_GLOBAL_SHS_CONFIG
 }XMC_VADC_GLOBAL_SHS_CONFIG_t;
 
 #endif
+
 /**
- * Detailed result structure
+ * Detailed global result structure
  */
- typedef struct XMC_VADC_DETAILED_RESULT
+typedef struct XMC_VADC_GLOBAL_DETAILED_RESULT
+{
+  union
+  {
+    struct
+    {
+      uint32_t result                   :16;  /**< Result of the Analog to digital conversion*/
+      uint32_t group_number             :4;   /**< Indicates the group to which the channel_number refers*/
+      uint32_t channel_number           :5;   /**< Converted channel number*/
+      uint32_t emux_channel_number      :3;   /**< Converted external multiplexer channel number.
+                                                 Only applicable for GxRES[0] result register*/
+      uint32_t converted_request_source :2;   /**< Converted request source*/
+      uint32_t fast_compare_result      :1;   /**< Fast compare result if conversion mode is fast compare mode.*/
+      uint32_t vaild_result             :1;   /**< Valid flag is set when a new result is available*/
+    };
+    uint32_t res;
+  };
+} XMC_VADC_GLOBAL_DETAILED_RESULT_t;
+
+/**
+ * Detailed channel result structure
+ */
+typedef struct XMC_VADC_DETAILED_RESULT
 {
   union
   {
@@ -1322,7 +1354,7 @@ typedef struct XMC_VADC_GLOBAL_SHS_CONFIG
     };
     uint32_t res;
   };
-}XMC_VADC_DETAILED_RESULT_t;
+} XMC_VADC_DETAILED_RESULT_t;
  
 
 /*Anonymous structure/union guard end*/
@@ -1731,6 +1763,8 @@ void XMC_VADC_GLOBAL_BindGroupToEMux(XMC_VADC_GLOBAL_t *const global_ptr, const 
  * the result register GLOBRES for the validity of the data. If the validity is assured, data is first read
  * the global result register, cached locally next and subsequently returned to the caller.
  *
+ * @note You can cast the return to a varible of type XMC_VADC_GLOBAL_DETAILED_RESULT_t to easily access the register bit fields
+ *
  * \par<b>Related APIs:</b><BR>
  * XMC_VADC_GLOBAL_GetResult()
  */
@@ -1915,7 +1949,7 @@ void XMC_VADC_GLOBAL_BackgroundSetReqSrcEventInterruptNode(XMC_VADC_GLOBAL_t *co
   XMC_ASSERT("XMC_VADC_GLOBAL_SHS_StepperInit:Wrong SHS Pointer",
              (shs_ptr == (XMC_VADC_GLOBAL_SHS_t*)(void*)SHS0))
 
-  shs_ptr->SHSCFG |=  (shs_ptr->SHSCFG & (uint32_t)~SHS_SHSCFG_AREF_Msk) | (uint32_t)aref;  
+  shs_ptr->SHSCFG |=  (shs_ptr->SHSCFG & (uint32_t)~SHS_SHSCFG_AREF_Msk) | (uint32_t)aref | SHS_SHSCFG_SCWC_Msk;  
  }
 
 #if(XMC_VADC_SHS_FULL_SET_REG == 1U)
@@ -4259,11 +4293,41 @@ void XMC_VADC_GROUP_ChannelInit(XMC_VADC_GROUP_t *const group_ptr, const uint32_
  * feature that was previously selected this method can be used.
  *
  * \par<b>Related APIs:</b><br>
- *  None.
+ *  XMC_VADC_GROUP_GetChannelAlias().
  */
-void XMC_VADC_GROUP_SetChannelAlias(XMC_VADC_GROUP_t *const group_ptr,
-                                    const uint32_t src_ch_num,
-                                    const uint32_t alias_ch_num);
+__STATIC_INLINE void XMC_VADC_GROUP_SetChannelAlias(XMC_VADC_GROUP_t *const group_ptr,
+                                                    const uint32_t src_ch_num,
+                                                    const uint32_t alias_ch_num)
+{
+  XMC_ASSERT("XMC_VADC_GROUP_SetChannelAlias:Wrong Group Pointer", XMC_VADC_CHECK_GROUP_PTR(group_ptr))
+  XMC_ASSERT("XMC_VADC_GROUP_SetChannelAlias:Wrong Alias Channel", ((alias_ch_num == 0)|| (alias_ch_num == 1U)))
+  XMC_ASSERT("XMC_VADC_GROUP_SetChannelAlias:Wrong Aliased Channel", ((src_ch_num < 8U)))
+
+  group_ptr->ALIAS |= (group_ptr->ALIAS & (uint32_t)~(VADC_G_ALIAS_ALIAS0_Msk << (VADC_G_ALIAS_ALIAS1_Pos * src_ch_num))) |
+                       (alias_ch_num << (VADC_G_ALIAS_ALIAS1_Pos * src_ch_num));
+}
+
+/**
+ * @param group_ptr    Constant pointer to the VADC group
+ * @param alias_ch_num This is the alias channel (Ch-0 or Ch-1)
+ *                     <BR>Range:[0x0, 0x1]
+ * @return
+ *    uint8_t Channel which will be converted by \b alias_ch_num, when called by the request source.
+ *
+ * \par<b>Description:</b><br>
+ * Gets the channel to convert when a conversion on alias channel(\b alias_ch_num) is requested.<BR>\n
+ *
+ * \par<b>Related APIs:</b><br>
+ *  XMC_VADC_GROUP_SetChannelAlias().
+ */
+__STATIC_INLINE uint8_t XMC_VADC_GROUP_GetChannelAlias(XMC_VADC_GROUP_t *const group_ptr,
+                                                    const uint32_t alias_ch_num)
+{
+  XMC_ASSERT("XMC_VADC_GROUP_SetChannelAlias:Wrong Group Pointer", XMC_VADC_CHECK_GROUP_PTR(group_ptr))
+  XMC_ASSERT("XMC_VADC_GROUP_SetChannelAlias:Wrong Alias Channel", ((alias_ch_num == 0)|| (alias_ch_num == 1U)))
+
+  return ((group_ptr->ALIAS >> (VADC_G_ALIAS_ALIAS1_Pos * alias_ch_num)) & VADC_G_ALIAS_ALIAS0_Msk);
+}
 
 /**
  * @param group_ptr    Constant pointer to the VADC group
@@ -4668,6 +4732,8 @@ __STATIC_INLINE void XMC_VADC_GROUP_DisableResultEvent(XMC_VADC_GROUP_t *const g
  * if the result is valid, if the fast compare bit, Data Reduction Counter, and the request source information.
  * All these information will be returned back. And if the user is polling for the result he can use the
  * result if the valid bit is set. A call to this API would return the complete register GxRES.
+ *
+ * @note You can cast the return to a varible of type XMC_VADC_DETAILED_RESULT_t to easily access the register bit fields
  *
  * \par<b>Related APIs:</b><br>
  * XMC_VADC_GROUP_GetResult().

@@ -111,6 +111,8 @@
 							<option id="com.ifx.xmc4000.option.target.processor.1410814170" name="Processor" superClass="com.ifx.xmc4000.option.target.processor" useByScannerDiscovery="false" value="org.eclipse.cdt.cross.arm.gnu.base.option.mcpu.cortex-m0" valueType="enumerated"/>
 							<option id="com.ifx.xmc4000.option.target.fpu.514542330" name="Fpu (-mfpu)" superClass="com.ifx.xmc4000.option.target.fpu" useByScannerDiscovery="false" value="No floating point hardware available" valueType="enumerated"/>
 							<option id="com.ifx.xmc4000.option.targetName.830321644" name="Target Name" superClass="com.ifx.xmc4000.option.targetName" useByScannerDiscovery="false" value="XMC1302-T038x0200" valueType="string"/>
+							<option id="com.ifx.xmc4000.option.debugging.format.1732119711" name="Debug format" superClass="com.ifx.xmc4000.option.debugging.format" useByScannerDiscovery="false" value="org.eclipse.cdt.cross.arm.gnu.base.option.debugging.format.default" valueType="enumerated"/>
+							<option id="com.ifx.xmc4000.option.debugging.other.1409015076" name="Other debugging flags" superClass="com.ifx.xmc4000.option.debugging.other" useByScannerDiscovery="false" value="-gdwarf-3" valueType="string"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="com.ifx.xmc4000.targetPlatform.736144356" isAbstract="false" name="Windows Platform" osList="win32" superClass="com.ifx.xmc4000.targetPlatform"/>
 							<builder buildPath="${workspace_loc:/XMC1300_TRANS}/Debug" id="com.ifx.XMC4000.toolchainBuilder.1140817520" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="XMC Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.ifx.XMC4000.toolchainBuilder"/>
 							<tool id="com.ifx.xmc4000.appDebug.compiler.601190179" name="ARM-GCC C Compiler" superClass="com.ifx.xmc4000.appDebug.compiler">
@@ -182,23 +184,35 @@
 		<project id="XMC1300_TRANS.com.ifx.xmc4000.appProject.1702493040" name="ARM-GCC Application" projectType="com.ifx.xmc4000.appProject"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appDebug.48430523;com.ifx.xmc4000.appDebug.48430523.;com.ifx.xmc4000.appDebug.compiler.601190179;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.c.compiler.base.input.1091348024">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appDebug.48430523;com.ifx.xmc4000.appDebug.48430523.;com.ifx.xmc4000.appDebug.assembler.1235353436;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.assembler.base.input.743763605">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appRelease.725121517;com.ifx.xmc4000.appRelease.725121517.;com.ifx.xmc4000.appRelease.assembler.568611447;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.assembler.base.input.1508246485">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appRelease.725121517;com.ifx.xmc4000.appRelease.725121517.;com.ifx.xmc4000.appRelease.compiler.1050315678;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.c.compiler.base.input.492097053">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
-		</scannerConfigBuildInfo>
-	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.language.mapping">
 		<project-mappings/>
 	</storageModule>
 	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appRelease.1785287640;com.ifx.xmc4000.appRelease.1785287640.;com.ifx.xmc4000.appRelease.compiler.194820738;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.c.compiler.base.input.21544881">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appDebug.1197924237;com.ifx.xmc4000.appDebug.1197924237.;com.ifx.xmc4000.appDebug.assembler.1401659454;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.assembler.base.input.780828184">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appRelease.581209828;com.ifx.xmc4000.appRelease.581209828.;com.ifx.xmc4000.appRelease.compiler.525609039;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.c.compiler.base.input.2011601682">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appRelease.1785287640;com.ifx.xmc4000.appRelease.1785287640.;com.ifx.xmc4000.appRelease.assembler.2068279586;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.assembler.base.input.1996629632">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appDebug.1197924237;com.ifx.xmc4000.appDebug.1197924237.;com.ifx.xmc4000.appDebug.compiler.1733822476;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.c.compiler.base.input.1586763457">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appRelease.581209828;com.ifx.xmc4000.appRelease.581209828.;com.ifx.xmc4000.appRelease.assembler.1667886706;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.assembler.base.input.209005332">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appDebug.1648512743;com.ifx.xmc4000.appDebug.1648512743.;com.ifx.xmc4000.appDebug.assembler.1288991046;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.assembler.base.input.217832689">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.ifx.xmc4000.appDebug.1648512743;com.ifx.xmc4000.appDebug.1648512743.;com.ifx.xmc4000.appDebug.compiler.1036734172;org.eclipse.cdt.cross.arm.gnu.sourcery.windows.c.compiler.base.input.1147726263">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCWinManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+	</storageModule>
 </cproject>

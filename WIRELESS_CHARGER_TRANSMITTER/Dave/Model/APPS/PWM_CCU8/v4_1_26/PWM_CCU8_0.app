@@ -42,18 +42,18 @@
     <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/CCU80/CCU80_0.dd#//@provided.0"/>
   </hwResources>
   <hwResources name="PWM_CCU8 CH1 Direct Out" URI="http://resources/4.1.26/app/PWM_CCU8/0/hwres_port_ch1_out0" resourceGroupUri="port/p/*/pad/*" mResGrpUri="port/p/*/pad/*">
-    <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/Port0/Port0_0.dd#//@provided.44"/>
+    <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/Port0/Port0_0.dd#//@provided.40"/>
   </hwResources>
   <hwResources name="PWM_CCU8 CH1 Invert Out" URI="http://resources/4.1.26/app/PWM_CCU8/0/hwres_port_ch1_out1" resourceGroupUri="port/p/*/pad/*" mResGrpUri="port/p/*/pad/*">
-    <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/Port0/Port0_0.dd#//@provided.15"/>
+    <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/Port0/Port0_0.dd#//@provided.53"/>
   </hwResources>
   <hwResources name="PWM_CCU8 CH2 Direct Out" URI="http://resources/4.1.26/app/PWM_CCU8/0/hwres_port_ch2_out2" resourceGroupUri="" required="false" mResGrpUri="port/p/*/pad/*"/>
   <hwResources name="PWM_CCU8 CH2 Invert Out" URI="http://resources/4.1.26/app/PWM_CCU8/0/hwres_port_ch2_out3" resourceGroupUri="" required="false" mResGrpUri="port/p/*/pad/*"/>
   <hwResources name="PWM_CCU8 CH1 Direct Out" URI="http://resources/4.1.26/app/PWM_CCU8/0/__pin_hwres_port_ch1_out0" resourceGroupUri="devicepackage/0/24" constraintType="GLOBAL_RESOURCE" mResGrpUri="devicepackage/0/*">
-    <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/DEVICEPACKAGE/DEVICEPACKAGE_0.dd#//@provided.16"/>
+    <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/DEVICEPACKAGE/DEVICEPACKAGE_0.dd#//@provided.12"/>
   </hwResources>
   <hwResources name="PWM_CCU8 CH1 Invert Out" URI="http://resources/4.1.26/app/PWM_CCU8/0/__pin_hwres_port_ch1_out1" resourceGroupUri="devicepackage/0/23" constraintType="GLOBAL_RESOURCE" mResGrpUri="devicepackage/0/*">
-    <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/DEVICEPACKAGE/DEVICEPACKAGE_0.dd#//@provided.9"/>
+    <downwardMapList xsi:type="ResourceModel:ResourceGroup" href="../../../HW_RESOURCES/DEVICEPACKAGE/DEVICEPACKAGE_0.dd#//@provided.13"/>
   </hwResources>
   <hwResources name="PWM_CCU8 CH2 Direct Out" URI="http://resources/4.1.26/app/PWM_CCU8/0/__pin_hwres_port_ch2_out2" resourceGroupUri="" required="false" mResGrpUri="devicepackage/0/*"/>
   <hwResources name="PWM_CCU8 CH2 Invert Out" URI="http://resources/4.1.26/app/PWM_CCU8/0/__pin_hwres_port_ch2_out3" resourceGroupUri="" required="false" mResGrpUri="devicepackage/0/*"/>

@@ -1,12 +1,12 @@
 /**
  * @file xmc_uart.c
- * @date 2016-07-22
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -53,6 +53,9 @@
  *     - Modified XMC_UART_CH_Init() to enable transfer status BUSY
  *     - Modified XMC_UART_CH_Stop() to check for transfer status
  *
+ * 2019-05-07:
+ *     - Added XMC_UART_CH_SetBaudrateEx() which allows to select between baudrate generator normal divider and fractional divider mode
+ *
  * @endcond 
  *
  */
@@ -88,8 +91,17 @@ void XMC_UART_CH_Init(XMC_USIC_CH_t *channel, const XMC_UART_CH_CONFIG_t *const 
   }
   
   /* Configure baud rate */
-  (void)XMC_USIC_CH_SetBaudrate(channel, config->baudrate, oversampling);
-  
+  if (config->normal_divider_mode)
+  {
+    /* Normal divider mode */
+    (void)XMC_USIC_CH_SetBaudrateEx(channel, config->baudrate, oversampling);
+  }
+  else
+  {
+    /* Fractional divider mode */
+    (void)XMC_USIC_CH_SetBaudrate(channel, config->baudrate, oversampling);
+  }
+    
   /* Configure frame format
    * Configure the number of stop bits
    * Pulse length is set to 0 to have standard UART signaling, 
@@ -145,6 +157,33 @@ XMC_UART_CH_STATUS_t XMC_UART_CH_SetBaudrate(XMC_USIC_CH_t *const channel, uint3
     }
   } 
   return status;
+}
+
+XMC_UART_CH_STATUS_t XMC_UART_CH_SetBaudrateEx(XMC_USIC_CH_t *const channel, uint32_t rate, uint32_t oversampling, bool normal_divider_mode)
+{
+  XMC_USIC_CH_STATUS_t status;
+  
+  status = XMC_UART_CH_STATUS_ERROR;
+  
+  if ((rate <= (XMC_SCU_CLOCK_GetPeripheralClockFrequency() >> 2U)) && (oversampling >= XMC_UART_CH_OVERSAMPLING_MIN_VAL))
+  {
+    if (normal_divider_mode)
+    {
+      /* Normal divider mode */
+      status = XMC_USIC_CH_SetBaudrateEx(channel, rate, oversampling);
+    }
+    else
+    {
+      /* Fractional divider mode */
+      status = XMC_USIC_CH_SetBaudrate(channel, rate, oversampling);
+    }
+  }
+  else
+  {
+    status = XMC_USIC_CH_STATUS_ERROR;
+  }
+  
+  return (XMC_UART_CH_STATUS_t)status;
 }
 
 void XMC_UART_CH_Transmit(XMC_USIC_CH_t *const channel, const uint16_t data)

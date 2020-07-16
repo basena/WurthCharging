@@ -1,12 +1,12 @@
 /**
  * @file xmc_spi.c
- * @date 2015-11-04
+ * @date 2019-05-07
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -51,6 +51,10 @@
  *
  * 2015-11-04: 
  *     - Modified the check of XMC_USIC_CH_GetTransmitBufferStatus() in the XMC_SPI_CH_Transmit() flag <br>
+ *
+ * 2019-05-07:
+ *     - Added XMC_SPI_CH_SetBaudrateEx() which allows to select between baudrate generator normal divider and fractional divider mode 
+ *
  * @endcond 
  *
  */
@@ -83,7 +87,16 @@ void XMC_SPI_CH_Init(XMC_USIC_CH_t *const channel, const XMC_SPI_CH_CONFIG_t *co
   if(config->bus_mode == XMC_SPI_CH_BUS_MODE_MASTER)
   {
     /* Configure baud rate */
-    (void)XMC_USIC_CH_SetBaudrate(channel, config->baudrate, XMC_SPI_CH_OVERSAMPLING); 
+    if (config->normal_divider_mode)
+    {
+      /* Normal divider mode */
+      (void)XMC_USIC_CH_SetBaudrateEx(channel, config->baudrate, XMC_SPI_CH_OVERSAMPLING); 
+    }
+    else
+    {
+      /* Fractional divider mode */
+      (void)XMC_USIC_CH_SetBaudrate(channel, config->baudrate, XMC_SPI_CH_OVERSAMPLING); 
+    }
   }
   
   /* Configuration of USIC Shift Control */
@@ -131,6 +144,31 @@ XMC_SPI_CH_STATUS_t XMC_SPI_CH_SetBaudrate(XMC_USIC_CH_t *const channel, const u
     }
   } 
   return status;
+}
+
+XMC_SPI_CH_STATUS_t XMC_SPI_CH_SetBaudrateEx(XMC_USIC_CH_t *const channel, const uint32_t rate, bool normal_divider_mode)
+{
+  XMC_USIC_CH_STATUS_t status;
+   
+  if (rate <= (XMC_SCU_CLOCK_GetPeripheralClockFrequency() >> 1U))
+  {
+    if (normal_divider_mode)
+    {
+      /* Normal divider mode */
+      status = XMC_USIC_CH_SetBaudrateEx(channel, rate, XMC_SPI_CH_OVERSAMPLING);
+    }
+    else
+    {
+      /* Fractional divider mode */
+      status = XMC_USIC_CH_SetBaudrate(channel, rate, XMC_SPI_CH_OVERSAMPLING);
+    }
+  }
+  else
+  {
+    status = XMC_USIC_CH_STATUS_ERROR;
+  }
+  
+  return (XMC_SPI_CH_STATUS_t)status;
 }
 
 /* Enable the selected slave signal by setting (SELO) bits in PCR register. */

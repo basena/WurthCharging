@@ -1,12 +1,12 @@
 /**
  * @file xmc1_gpio.c
- * @date 2015-06-20
+ * @date 2019-02-19
  *
  * @cond
  *********************************************************************************************************************
- * XMClib v2.1.16 - XMC Peripheral Driver Library 
+ * XMClib v2.1.22 - XMC Peripheral Driver Library 
  *
- * Copyright (c) 2015-2017, Infineon Technologies AG
+ * Copyright (c) 2015-2019, Infineon Technologies AG
  * All rights reserved.                        
  *                                             
  * Redistribution and use in source and binary forms, with or without modification,are permitted provided that the 
@@ -42,6 +42,12 @@
  * 2015-06-20:
  *     - Removed version macros and declaration of GetDriverVersion API
  *
+ * 2017-09-15:
+ *     - Fix side effects on output level when programming a pin as input after the same pin in another port has been configured as output
+ * 
+ * 2019-02-19:
+ *     - Fix initialization of initial output level in case pin is an analog pin and configured as push pull or open drain
+ *
  * @endcond
  *
  */
@@ -57,6 +63,7 @@
 #define PORT_PHCR_Msk             PORT0_PHCR0_PH0_Msk
 #define PORT_PHCR_Size            PORT0_PHCR0_PH0_Msk
 #define PORT_HWSEL_Msk            PORT0_HWSEL_HW0_Msk
+#define XMC_GPIO_MODE_OE          XMC_GPIO_MODE_OUTPUT_PUSH_PULL
 
 /*******************************************************************************
  * API IMPLEMENTATION
@@ -83,8 +90,14 @@ void XMC_GPIO_Init(XMC_GPIO_PORT_t *const port, const uint8_t pin, const XMC_GPI
   {    
     port->PDISC &= ~(uint32_t)((uint32_t)0x1U << pin);
   }
-  /* Set output level */
-  port->OMR = (uint32_t)config->output_level << pin;
+
+  if ((config->mode & XMC_GPIO_MODE_OE) != 0)
+  {
+    /* If output is enabled */
+
+    /* Set output level */
+    port->OMR = (uint32_t)config->output_level << pin;
+  }
   
   /* Set mode */
   port->IOCR[pin >> 2U] |= (uint32_t)config->mode << (PORT_IOCR_PC_Size * (pin & 0x3U));

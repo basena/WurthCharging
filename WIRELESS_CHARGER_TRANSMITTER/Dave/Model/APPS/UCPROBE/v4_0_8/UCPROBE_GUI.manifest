@@ -1,0 +1,80 @@
+package Model.APPS.UCPROBE.v4_0_8;
+
+// Import statements
+import ifx.davex.app.manifest.*
+
+abstract class UCPROBE_GUI extends AppManifest {
+
+    /* IMPORTANT NOTE: This is an auto generated file, please do not edit manually. */
+    /* User modifications in the GUI editor will be updated here automatically.     */
+    /* Manually editing the contents of this file will corrupt the APP SDK project. */
+
+	/* Begin : UI variable section */
+	 public GTab gtab_uart_settings;
+	 public GTab gtab_oscilloscope_settings;
+	 public GInteger ginteger_PROBE_COM_CFG_RX_MAX_SIZE;
+	 public GInteger ginteger_PROBE_COM_CFG_TX_MAX_SIZE;
+	 public GInteger ginteger_PROBE_COM_CFG_STR_IN_BUF_SIZE;
+	 public GInteger ginteger_PROBE_COM_CFG_STR_OUT_BUF_SIZE;
+	 public GInteger ginteger_custom_rate;
+	 public GInteger ginteger_osc_sampling_frequency;
+	 public GInteger ginteger_osc_num_channels;
+	 public GInteger ginteger_osc_samples_per_channel;
+	 public GCombo gcombo_comm_interface;
+	 public GCombo gcombo_baud_rate;
+	 public GCombo gcombo_data_bits;
+	 public GCombo gcombo_parity;
+	 public GCombo gcombo_stop_bits;
+	 public GCheck gcheck_PROBE_COM_CFG_WR_REQ_EN;
+	 public GCheck gcheck_PROBE_COM_CFG_STR_REQ_EN;
+	 public GCheck gcheck_PROBE_COM_CFG_TERMINAL_REQ_EN;
+	 public GCheck gcheck_PROBE_COM_CFG_STAT_EN;
+	 public GCheck gcheck_enable_oscilloscope;
+	 public GCheck gcheck_functions_in_ram;
+	 public GCheck gcheck_enable_uart_checksum;
+	 public GCheck gcheck_osc_enable_16bit_vars;
+	 public GCheck gcheck_osc_enable_32bit_vars;
+	 public GLabel glabel_baud_rate;
+	 public GLabel glabel_data_bits;
+	 public GLabel glabel_parity;
+	 public GLabel glabel_stop_bits;
+	 public GInterruptPrio ginterruptprio_tx_int;
+	 public GInterruptPrio ginterruptprio_rx_int;
+
+	 public UCPROBE_GUI(DaveEnv daveEnv){
+
+	 gtab_uart_settings = GTab(widgetName:"gtab_uart_settings", text:"UART Settings", enabled:true, visible:true)
+	 gtab_oscilloscope_settings = GTab(widgetName:"gtab_oscilloscope_settings", text:"Oscilloscope Settings", enabled:true, visible:true)
+	 ginteger_PROBE_COM_CFG_RX_MAX_SIZE = GInteger(widgetName:"ginteger_PROBE_COM_CFG_RX_MAX_SIZE", value:256, minValue:1, maxValue:Long.MAX_VALUE, enabled:true, visible:true, isMandatoryValue:false)
+	 ginteger_PROBE_COM_CFG_TX_MAX_SIZE = GInteger(widgetName:"ginteger_PROBE_COM_CFG_TX_MAX_SIZE", value:256, minValue:1, maxValue:Long.MAX_VALUE, enabled:true, visible:true, isMandatoryValue:false)
+	 ginteger_PROBE_COM_CFG_STR_IN_BUF_SIZE = GInteger(widgetName:"ginteger_PROBE_COM_CFG_STR_IN_BUF_SIZE", value:128, minValue:1, maxValue:Long.MAX_VALUE, enabled:true, visible:true, isMandatoryValue:false)
+	 ginteger_PROBE_COM_CFG_STR_OUT_BUF_SIZE = GInteger(widgetName:"ginteger_PROBE_COM_CFG_STR_OUT_BUF_SIZE", value:2048, minValue:1, maxValue:Long.MAX_VALUE, enabled:true, visible:true, isMandatoryValue:false)
+	 ginteger_custom_rate = GInteger(widgetName:"ginteger_custom_rate", value:1000000, minValue:1, maxValue:2000000, enabled:false, visible:true, isMandatoryValue:false)
+	 ginteger_osc_sampling_frequency = GInteger(widgetName:"ginteger_osc_sampling_frequency", value:1000, minValue:1, maxValue:Long.MAX_VALUE, enabled:true, visible:true, isMandatoryValue:false)
+	 ginteger_osc_num_channels = GInteger(widgetName:"ginteger_osc_num_channels", value:4, minValue:1, maxValue:8, enabled:true, visible:true, isMandatoryValue:false)
+	 ginteger_osc_samples_per_channel = GInteger(widgetName:"ginteger_osc_samples_per_channel", value:512, minValue:1, maxValue:Long.MAX_VALUE, enabled:true, visible:true, isMandatoryValue:false)
+	 gcombo_comm_interface = GCombo(widgetName:"gcombo_comm_interface", options:["Debug interface","UART"], value:"Debug interface", enabled:true, visible:true, isMandatoryValue:false)
+	 gcombo_baud_rate = GCombo(widgetName:"gcombo_baud_rate", options:["1200","2400","4800","9600","19200","38400","57600","115200","230400","460800","921600","Custom Rate"], value:"115200", enabled:true, visible:true, isMandatoryValue:false)
+	 gcombo_data_bits = GCombo(widgetName:"gcombo_data_bits", options:["7","8"], value:"8", enabled:true, visible:true, isMandatoryValue:false)
+	 gcombo_parity = GCombo(widgetName:"gcombo_parity", options:["None","Odd","Even"], value:"None", enabled:true, visible:true, isMandatoryValue:false)
+	 gcombo_stop_bits = GCombo(widgetName:"gcombo_stop_bits", options:["0","1","2"], value:"1", enabled:true, visible:true, isMandatoryValue:false)
+	 gcheck_PROBE_COM_CFG_WR_REQ_EN = GCheck(widgetName:"gcheck_PROBE_COM_CFG_WR_REQ_EN", value:true, enabled:true, visible:true)
+	 gcheck_PROBE_COM_CFG_STR_REQ_EN = GCheck(widgetName:"gcheck_PROBE_COM_CFG_STR_REQ_EN", value:true, enabled:true, visible:true)
+	 gcheck_PROBE_COM_CFG_TERMINAL_REQ_EN = GCheck(widgetName:"gcheck_PROBE_COM_CFG_TERMINAL_REQ_EN", value:true, enabled:true, visible:true)
+	 gcheck_PROBE_COM_CFG_STAT_EN = GCheck(widgetName:"gcheck_PROBE_COM_CFG_STAT_EN", value:true, enabled:true, visible:true)
+	 gcheck_enable_oscilloscope = GCheck(widgetName:"gcheck_enable_oscilloscope", value:true, enabled:true, visible:true)
+	 gcheck_functions_in_ram = GCheck(widgetName:"gcheck_functions_in_ram", value:false, enabled:true, visible:true)
+	 gcheck_enable_uart_checksum = GCheck(widgetName:"gcheck_enable_uart_checksum", value:false, enabled:true, visible:true)
+	 gcheck_osc_enable_16bit_vars = GCheck(widgetName:"gcheck_osc_enable_16bit_vars", value:true, enabled:true, visible:true)
+	 gcheck_osc_enable_32bit_vars = GCheck(widgetName:"gcheck_osc_enable_32bit_vars", value:true, enabled:true, visible:true)
+	 glabel_baud_rate = GLabel(widgetName:"glabel_baud_rate", text:"Baud Rate:", enabled:true, visible:true)
+	 glabel_data_bits = GLabel(widgetName:"glabel_data_bits", text:"Data Bits:", enabled:true, visible:true)
+	 glabel_parity = GLabel(widgetName:"glabel_parity", text:"Parity:", enabled:true, visible:true)
+	 glabel_stop_bits = GLabel(widgetName:"glabel_stop_bits", text:"Stop Bits:", enabled:true, visible:true)
+	 ginterruptprio_tx_int = GInterruptPrio(widgetName:"ginterruptprio_tx_int", priorityValue:0, minPriority:0, maxPriority:63, subPriorityValue:0, minSubPriority:0, maxSubPriority:0, subPriorityVisible:true, enabled:true, visible:true)
+	 ginterruptprio_rx_int = GInterruptPrio(widgetName:"ginterruptprio_rx_int", priorityValue:0, minPriority:0, maxPriority:63, subPriorityValue:0, minSubPriority:0, maxSubPriority:0, subPriorityVisible:true, enabled:true, visible:true)
+
+
+	 }
+	/* End : UI variable section */
+}
