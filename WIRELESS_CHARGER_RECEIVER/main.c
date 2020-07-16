@@ -7,10 +7,10 @@ volatile static float g_temperature = 0;
 volatile static float g_temperature_average = 0;
 volatile static float g_voltage = 0;
 volatile static float g_voltage_average = 0;
-volatile static float g_voltage_out_max = 20000;
+volatile static float g_voltage_out_max = 16800;
 volatile static float g_current = 0;
 volatile static float g_current_average = 0;
-volatile static float g_current_max = 0;
+volatile static float g_current_max = 4000;
 volatile static float g_P_out;
 volatile static uint32_t g_ADC_voltage, g_ADC_current, g_ADC_temperature, g_ADC_acomp, g_ADC_vref;
 volatile static float g_ADC_vref_average=880;
@@ -31,6 +31,9 @@ volatile static uint32_t g_critical_detected=0;
 #define ACOMP_MAX           2000
 #define ACOMP_HYSTERESIS    50
 #define VREF_VALUE_MV       2480
+
+static uint8_t up_hex = ~0x00; //0x44; //0b01000100;
+static uint8_t dn_hex = ~0xFF; //0x77; //0b01110111;
 
 
 void check_threshold (uint32_t value, uint32_t threshold, uint32_t hysteresis_offset, volatile uint32_t* status)
@@ -90,17 +93,14 @@ int main(void)
 		if (counter_20ms >= 5)
 		{
 			counter_20ms = 0;
-			if (g_voltage < g_voltage_out_max)
+			if (g_voltage < g_voltage_out_max && g_current < g_current_max)
 			{
 				/* Power Up */
 				DIGITAL_IO_SetOutputLow(&UP_LED); led_up = 0;
 				DIGITAL_IO_SetOutputHigh(&DOWN_LED); led_down = 1;
 				send_redundant = 5;
 				while (send_redundant-- > 0)
-					while(UART_Transmit(&COM, (uint8_t *)"8", 1));/* Send 38h / 56d / 00111000b
-																  --> 0 00011100 1 00 non-inverted
-																  --> 1 11100011 0 00 inverted START/DATA/PARITY/2STOP
-																  */
+					while(UART_Transmit(&COM, &up_hex, 1));
 			}
 			else
 			{
@@ -109,10 +109,7 @@ int main(void)
 				DIGITAL_IO_SetOutputLow(&DOWN_LED); led_down = 0;
 				send_redundant = 5;
 				while (send_redundant-- > 0)
-					while(UART_Transmit(&COM, (uint8_t *)"f", 1)); /* Send 66h / 102d / 01100110b
-			 													   --> 0 01100110 0 11 non-inverted
-																   --> 1 10011001 1 00 inverted START/DATA/PARITY/2STOP
-																   */
+					while(UART_Transmit(&COM, &dn_hex, 1));
 			}
 		}
   }

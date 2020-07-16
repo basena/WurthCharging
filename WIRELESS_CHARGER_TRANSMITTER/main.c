@@ -11,11 +11,8 @@
  */
 
 #define JMP1_AUTOMATIC_CONTROL 1
-#define POWER_UP_0 	 0x8E
-#define POWER_UP_1 	 0x0E
-
-#define POWER_DOWN_0 0x66
-#define POWER_DOWN_1 0xE6
+#define POWER_UP	0x77
+#define POWER_DOWN	0x88
 
 static const float g_hysterese_voltage_V = 0.050;
 volatile static float g_power_up = 0, g_power_down = 0;
@@ -51,14 +48,16 @@ volatile uint8_t g_clamp = 0;
 volatile static uint8_t g_pwm_en = 0;
 volatile static uint32_t g_ADC_voltage, g_ADC_current, g_ADC_temperature, g_ADC_acomp, g_ADC_vref;
 volatile static float g_ADC_vref_average=880;
-volatile static float g_PWM_current_frequency=175E3;
+volatile static float g_PWM_current_frequency=185E3;
 volatile static uint32_t counter_20ms = 0;
 uint8_t debug_output_buffer[255];
-const float PWM_start_frequency = 175E3;
+const float PWM_start_frequency = 185E3;
 const float PWM_max_frequency = 205E3;
 const float PWM_min_frequency = 100E3;
-const float PWM_delta_frequency  = 1E3;
+const float PWM_delta_frequency  = 0.5E3;
 uint32_t histogram_received_patterns[256];
+const uint8_t hamm_margin = 4;
+const uint8_t ones_thresh = 3;
 
 void PWM_enable_disable_toggle()
 {
@@ -92,6 +91,22 @@ void check_threshold (uint32_t value, uint32_t threshold, uint32_t hysteresis_of
 	return;
 }
 
+uint8_t count_ones (uint8_t a)
+{
+	uint8_t count = 0;
+	while (a) {
+		count += a & 1;
+		a >>= 1;
+	}
+	return count;
+}
+
+uint8_t hamm_diff (uint8_t a, uint8_t b)
+{
+	uint8_t diff = a ^ b;
+	return count_ones(diff);
+}
+
 float average_calc(float new_value, float current_average, uint16_t filter)
 {
 	return (current_average*((float)filter-1) + new_value)/filter;
@@ -108,7 +123,7 @@ int main(void)
   uint32_t ENC_A_new, ENC_B_new;
 
 
-  static uint32_t samples=0;
+  //static uint32_t samples=0;
 
   status = DAVE_Init();           /* Initialization of DAVE APPs  */
 
@@ -160,10 +175,10 @@ int main(void)
 	while (!UART_IsRXFIFOEmpty (&COM))
 	{
 		/* Store last 5 bytes inside array received_byte*/
-		received_byte = UART_GetReceivedWord(&COM);
+		UART_Receive(&COM, &received_byte, 1);
 		if (index<5)
 		{
-			receive_buffer[index] = received_byte;
+			receive_buffer[index] = received_byte & 0b00011111;
 			histogram_received_patterns[received_byte]++;
 			index++;
 		}
@@ -176,19 +191,17 @@ int main(void)
 			power_down=0;
 			for (index=0; index<5; index++)
 			{
-				if ((receive_buffer[index]==POWER_UP_0)||
-					(receive_buffer[index]==POWER_UP_1)
-				   )
+				uint8_t ones = count_ones(receive_buffer[index]);
+				if (ones < ones_thresh) //(hamm_diff(receive_buffer[index], POWER_UP   ) < hamm_margin)
 					power_up++;
-				if ((receive_buffer[index]==POWER_DOWN_0)||
-					(receive_buffer[index]==POWER_DOWN_1))
+				else //if (hamm_diff(receive_buffer[index], POWER_DOWN ) < hamm_margin)
 					power_down++;
 			}
-			if (power_up>=3)
+			if (power_up > power_down)
 			{
 				g_power_up=1;
 			}
-			if (power_down>=3)
+			else if (power_down > power_up)
 			{
 				g_power_down=1;
 			}
@@ -202,7 +215,7 @@ int main(void)
 	if (counter_20ms>10)
 	{
 		counter_20ms=0;
-		sprintf ((char *)debug_output_buffer,"Volt[mV]:%07.1f   Curr[mA]:%07.1f   Pow[W]:%05.1f   Temp[°C]: %05.1f   Frequ[kHz]:%07.3f OV:%1i OC:%1i OT:%1i CL:%1i %2x %2x %2x %2x %2x  \n\r",
+		sprintf ((char *)debug_output_buffer,"Volt[mV]:%07.1f   Curr[mA]:%07.1f   Pow[W]:%05.1f   Temp[°C]: %05.1f   Frequ[kHz]:%07.3f OV:%1i OC:%1i OT:%1i CL:%1i %02x %02x %02x %02x %02x %02x \n\r",
 				g_voltage_average,
 				g_current_average,
 				g_P_out,
@@ -216,7 +229,8 @@ int main(void)
 				(int)receive_buffer[1],
 				(int)receive_buffer[2],
 				(int)receive_buffer[3],
-				(int)receive_buffer[4]
+				(int)receive_buffer[4],
+				count_ones(receive_buffer[4])
 									);
 
 		UART_Transmit(&RS232, debug_output_buffer, (uint32_t)strlen((char *)debug_output_buffer));
