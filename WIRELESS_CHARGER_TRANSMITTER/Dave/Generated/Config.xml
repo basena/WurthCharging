@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<Project MotherSystem_Version="" Name="WIRELESS_CHARGER_TRANSMTTER_Upgraded" Path="C:\FW\WIRELESS_CHARGER_TRANSMITTER">
+<Project MotherSystem_Version="" Name="TRANSMITTER" Path="C:\FW\WIRELESS_CHARGER_TRANSMITTER">
     <COMPILER>
         <Name>ARM_GCC_HOME</Name>
         <Version/>
