@@ -1,0 +1,149 @@
+   1              	 .cpu cortex-m0
+   2              	 .fpu softvfp
+   3              	 .eabi_attribute 20,1
+   4              	 .eabi_attribute 21,1
+   5              	 .eabi_attribute 23,3
+   6              	 .eabi_attribute 24,1
+   7              	 .eabi_attribute 25,1
+   8              	 .eabi_attribute 26,1
+   9              	 .eabi_attribute 30,2
+  10              	 .eabi_attribute 34,0
+  11              	 .eabi_attribute 18,4
+  12              	 .code 16
+  13              	 .file "digital_io_conf.c"
+  14              	 .text
+  15              	.Ltext0:
+  16              	 .cfi_sections .debug_frame
+  17              	 .global DOWN_LED
+  18              	 .global R_LED
+  19              	 .global G_LED
+  20              	 .global UP_LED
+  21              	 .global CLAMP
+  22              	 .global JMP1
+  23              	 .global JMP2
+  24              	 .global JMP3
+  25              	 .global JMP4
+  26              	 .section .rodata.DOWN_LED,"a",%progbits
+  27              	 .align 2
+  30              	DOWN_LED:
+  31 0000 00010440 	 .word 1074004224
+  32 0004 80       	 .byte -128
+  33 0005 000000   	 .space 3
+  34 0008 00000100 	 .word 65536
+  35 000c 04       	 .byte 4
+  36 000d 00       	 .byte 0
+  37 000e 0000     	 .space 2
+  38              	 .section .rodata.G_LED,"a",%progbits
+  39              	 .align 2
+  42              	G_LED:
+  43 0000 00010440 	 .word 1074004224
+  44 0004 80       	 .byte -128
+  45 0005 000000   	 .space 3
+  46 0008 00000100 	 .word 65536
+  47 000c 05       	 .byte 5
+  48 000d 00       	 .byte 0
+  49 000e 0000     	 .space 2
+  50              	 .section .rodata.CLAMP,"a",%progbits
+  51              	 .align 2
+  54              	CLAMP:
+  55 0000 00000440 	 .word 1074003968
+  56 0004 80       	 .byte -128
+  57 0005 000000   	 .space 3
+  58 0008 00000100 	 .word 65536
+  59 000c 02       	 .byte 2
+  60 000d 00       	 .byte 0
+  61 000e 0000     	 .space 2
+  62              	 .section .rodata.UP_LED,"a",%progbits
+  63              	 .align 2
+  66              	UP_LED:
+  67 0000 00010440 	 .word 1074004224
+  68 0004 80       	 .byte -128
+  69 0005 000000   	 .space 3
+  70 0008 00000100 	 .word 65536
+  71 000c 03       	 .byte 3
+  72 000d 00       	 .byte 0
+  73 000e 0000     	 .space 2
+  74              	 .section .rodata.R_LED,"a",%progbits
+  75              	 .align 2
+  78              	R_LED:
+  79 0000 00010440 	 .word 1074004224
+  80 0004 80       	 .byte -128
+  81 0005 000000   	 .space 3
+  82 0008 00000100 	 .word 65536
+  83 000c 02       	 .byte 2
+  84 000d 00       	 .byte 0
+  85 000e 0000     	 .space 2
+  86              	 .section .rodata.JMP1,"a",%progbits
+  87              	 .align 2
+  90              	JMP1:
+  91 0000 00000440 	 .word 1074003968
+  92 0004 10       	 .byte 16
+  93 0005 00       	 .byte 0
+  94 0006 00000000 	 .space 6
+  94      0000
+  95 000c 0A       	 .byte 10
+  96 000d 00       	 .byte 0
+  97 000e 0000     	 .space 2
+  98              	 .section .rodata.JMP2,"a",%progbits
+  99              	 .align 2
+ 102              	JMP2:
+ 103 0000 00000440 	 .word 1074003968
+ 104 0004 00       	 .byte 0
+ 105 0005 00       	 .byte 0
+ 106 0006 00000000 	 .space 6
+ 106      0000
+ 107 000c 0B       	 .byte 11
+ 108 000d 00       	 .byte 0
+ 109 000e 0000     	 .space 2
+ 110              	 .section .rodata.JMP3,"a",%progbits
+ 111              	 .align 2
+ 114              	JMP3:
+ 115 0000 00000440 	 .word 1074003968
+ 116 0004 00       	 .byte 0
+ 117 0005 00       	 .byte 0
+ 118 0006 00000000 	 .space 6
+ 118      0000
+ 119 000c 0C       	 .byte 12
+ 120 000d 00       	 .byte 0
+ 121 000e 0000     	 .space 2
+ 122              	 .section .rodata.JMP4,"a",%progbits
+ 123              	 .align 2
+ 126              	JMP4:
+ 127 0000 00000440 	 .word 1074003968
+ 128 0004 10       	 .byte 16
+ 129 0005 00       	 .byte 0
+ 130 0006 00000000 	 .space 6
+ 130      0000
+ 131 000c 0D       	 .byte 13
+ 132 000d 00       	 .byte 0
+ 133 000e 0000     	 .space 2
+ 134              	 .text
+ 135              	.Letext0:
+ 136              	 .file 1 "c:\\users\\jutta.schuerba\\desktop\\dave-ide-4.4.2-64bit\\eclipse\\arm-gcc-49\\arm-none-eabi\\include\\machine\\_default_types.h"
+ 137              	 .file 2 "c:\\users\\jutta.schuerba\\desktop\\dave-ide-4.4.2-64bit\\eclipse\\arm-gcc-49\\arm-none-eabi\\include\\stdint.h"
+ 138              	 .file 3 "C:/Workspaces/DAVE-4.4.2-64Bit/WIRELESS_CHARGER_RECVEIVER_delivered/Libraries/XMCLib/inc/xmc_gpio.h"
+ 139              	 .file 4 "C:/Workspaces/DAVE-4.4.2-64Bit/WIRELESS_CHARGER_RECVEIVER_delivered/Libraries/XMCLib/inc/xmc1_gpio.h"
+ 140              	 .file 5 "../Dave/Generated/DIGITAL_IO/digital_io.h"
+ 141              	 .file 6 "../Dave/Generated/DIGITAL_IO/digital_io_conf.c"
+DEFINED SYMBOLS
+                            *ABS*:00000000 digital_io_conf.c
+    {standard input}:30     .rodata.DOWN_LED:00000000 DOWN_LED
+    {standard input}:78     .rodata.R_LED:00000000 R_LED
+    {standard input}:42     .rodata.G_LED:00000000 G_LED
+    {standard input}:66     .rodata.UP_LED:00000000 UP_LED
+    {standard input}:54     .rodata.CLAMP:00000000 CLAMP
+    {standard input}:90     .rodata.JMP1:00000000 JMP1
+    {standard input}:102    .rodata.JMP2:00000000 JMP2
+    {standard input}:114    .rodata.JMP3:00000000 JMP3
+    {standard input}:126    .rodata.JMP4:00000000 JMP4
+    {standard input}:27     .rodata.DOWN_LED:00000000 $d
+    {standard input}:39     .rodata.G_LED:00000000 $d
+    {standard input}:51     .rodata.CLAMP:00000000 $d
+    {standard input}:63     .rodata.UP_LED:00000000 $d
+    {standard input}:75     .rodata.R_LED:00000000 $d
+    {standard input}:87     .rodata.JMP1:00000000 $d
+    {standard input}:99     .rodata.JMP2:00000000 $d
+    {standard input}:111    .rodata.JMP3:00000000 $d
+    {standard input}:123    .rodata.JMP4:00000000 $d
+
+NO UNDEFINED SYMBOLS

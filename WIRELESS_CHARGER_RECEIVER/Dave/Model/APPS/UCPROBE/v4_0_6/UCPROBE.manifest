@@ -1,0 +1,264 @@
+package Model.APPS.UCPROBE.v4_0_6;
+
+/*************** Revision History **********************************************
+Version        Date          Description 
+
+  4.0.2       16-Aug-2016    Initial version
+  4.0.4       09-Jan-2017    Fixed code generation for XMC1
+  4.0.6       27-Jun-2017    Added option to place ProbeScope API in RAM<BR>
+  							 Solved issue with fixed UART baudrate<BR>
+*******************************************************************************/
+
+// Import statements
+import ifx.davex.app.manifest.*
+
+class  UCPROBE extends UCPROBE_GUI {
+
+	 /* Note  : Following APP properties are mandatory and important */
+	 
+	 /* Begin : APP property section */
+	
+	/**
+	 * APP version
+	 * Format: a string with three digit separated by a dot.
+	 */
+	def version            = '4.0.6'
+	
+	/**
+	 * APP categories declaration. 
+	 * It is list of strings. Subcategories are separated by slash.
+	 * No limits on number of categories and subcategories depth.
+	 */
+	def categoriesDescription = ["Contributed APPs"] 
+
+	/** 
+	 * Minimum DAVE version required for this APP.
+	 * 
+	 * It is string with three digit separated by a dot.
+	 */
+	def minDaveVersion           = '4.2.4'
+	
+	/** 
+	 * Keywords used by search feature in APPs selection view
+	 * 
+	 * It is a list of string.
+	 */
+	def keywords      = ['Micrium', 'uC/Probe', 'ProbeScope', 'Control', 'Monitor', 'Oscilloscope', 'Debug', 'Data Logging']
+	
+	/** 
+	 * softwareIDs is used to declare which devices are compatible with this APP.
+	 * It is a map with key a string containing a pattern that shall match the SW id of
+	 * the device and as value the minimal version of the APP.
+	 */
+	def softwareIDs       = ["XMC4.*.*.*.*":"1.0.0",
+		                     "XMC1.*.*.*.*":"1.0.0"]
+	
+	/**
+	 * Singleton property:
+	 * When it is true the APP can be instantiated only once. 
+	 */
+	def singleton     = true
+
+
+	/**
+	 * initProvider property
+	 * It shall be true to add a call to <AppName>_Init() 
+	 */
+	def initProvider  = false
+	
+	/**
+	 * Deprecated APP
+	 * Set it to true to indicate that the APP shall be not used for new projects.
+	 */
+	def deprecated    = false
+	
+	/**
+	 * Sharable property.
+	 * It shall be true to allows multiple APPs to require the same instance of this APP.
+	 */
+	def sharable      = false
+
+	/**
+	 *  APP function description.
+	 */
+	def description = """Configures uC/Probe XMC target code.
+uC/Probe XMC is a Windows application that allows you to read and write the memory of any embedded target processor during run-time, and map those values to a set of virtual controls and indicators placed on a graphical dashboard. 
+uC/Probe XMC includes an oscilloscope Control that allows you to plot the value of any of your global variables and I/O registers at very high sampling rates. """
+	
+	/* End   : APP property section */
+	
+	/* Begin : User APP property section */
+					
+    MVirtualResourceGroup hwres_uart_ch
+	MVirtualResourceGroup hwres_nvic_tx_int
+	MVirtualResourceGroup hwres_nvic_rx_int
+	MVirtualResourceGroup hwres_port_tx
+	MVirtualResourceGroup hwres_port_rx
+	
+	MVirtualSignal vs_uart_ch_tx, vs_port_tx
+	MVirtualSignal vs_uart_ch_rx, vs_port_rx
+	MVirtualSignal vs_uart_ch_tx_sr, vs_nvic_tx_int
+	MVirtualSignal vs_uart_ch_rx_sr, vs_nvic_rx_int
+	
+	MRequiredApp appres_clk
+	MRequiredApp appres_cpu
+	
+	/* End   : User APP property section */
+
+	/* APP Constructor */
+	public UCPROBE(DaveEnv daveEnv) {
+		String family = daveEnv.project.selectedDevice.deviceId.family 	//ex:XMC4 or XMC1
+		MF uart_enabled = MF({gcombo_comm_interface.value == "UART"}, Boolean)
+		MF uart_enabled_and_str_req_enable = MF({(gcombo_comm_interface.value == "UART") && gcheck_PROBE_COM_CFG_STR_REQ_EN.value}, Boolean)
+		MF osc_enabled = MF({gcheck_enable_oscilloscope.value}, Boolean)
+	    
+		if (family == "XMC4") {
+			appres_cpu =  MRequiredApp("CPU_CTRL_XMC4", "CPU_CTRL_XMC4", RSHARABLE, "4.0.2", uart_enabled)
+			appres_clk =  MRequiredApp("CLOCK_XMC4", "CLOCK_XMC4", RSHARABLE, "4.0.2", uart_enabled)
+            
+			ginterruptprio_tx_int.subPriorityVisible = true
+            ginterruptprio_rx_int.subPriorityVisible = true
+            ginterruptprio_tx_int.subPriorityValue = 0
+            ginterruptprio_rx_int.subPriorityValue = 0
+            ginterruptprio_tx_int.priorityValue = 63
+            ginterruptprio_rx_int.priorityValue = 63
+ 		}
+
+		if (family == "XMC1") {
+			appres_cpu =  MRequiredApp("CPU_CTRL_XMC1", "CPU_CTRL_XMC1", RSHARABLE, "4.0.2", uart_enabled)
+			appres_clk =  MRequiredApp("CLOCK_XMC1", "CLOCK_XMC1", RSHARABLE, "4.0.2", uart_enabled)
+
+			ginterruptprio_tx_int.subPriorityVisible = false
+            ginterruptprio_rx_int.subPriorityVisible = false
+			ginterruptprio_tx_int.priorityValue = 3
+			ginterruptprio_tx_int.maxPriority = 3
+			ginterruptprio_rx_int.priorityValue = 3
+			ginterruptprio_rx_int.maxPriority = 3
+	  
+		}
+		
+		hwres_uart_ch =  MVirtualResourceGroup("UART_CH", ["peripheral", "usic", "*", "channel", "*"], uart_enabled)
+		hwres_nvic_tx_int = MVirtualResourceGroup("UART Transmit interrupt", ["peripheral", "cpu", "0", "nvic", "interrupt", "*"], uart_enabled)
+		hwres_nvic_rx_int = MVirtualResourceGroup("UART Receive interrupt", ["peripheral", "cpu", "0", "nvic", "interrupt", "*"], uart_enabled)
+		hwres_port_tx = MVirtualResourceGroup("TXD", ["port", "p", "*", "pad", "*"], uart_enabled)
+		hwres_port_rx = MVirtualResourceGroup("RXD", ["port", "p", "*", "pad", "*"], uart_enabled)
+	
+		/*Signal definition*/
+		/*Port signals*/
+		@AddPin(pinDisplayName = 'RXD')
+		vs_port_rx = MVirtualSignal(hwres_port_rx, "rx", "pad", uart_enabled, false)
+		@AddPin(pinDisplayName = 'TXD')
+		vs_port_tx = MVirtualSignal(hwres_port_tx, "tx", "pad", uart_enabled, false)
+
+		vs_uart_ch_rx = MVirtualSignal(hwres_uart_ch, "dx0ins", "dx0ins", uart_enabled, false)
+		vs_uart_ch_tx = MVirtualSignal(hwres_uart_ch, "dout0", "dout0",  uart_enabled, false)
+		
+		vs_uart_ch_tx_sr = MVirtualSignal(hwres_uart_ch, "transmit_buffer_int", "transmit_buffer_int", uart_enabled, false)
+		vs_uart_ch_rx_sr = MVirtualSignal(hwres_uart_ch, "standard_receive_int", "standard_receive_int", uart_enabled, false)
+		vs_nvic_tx_int =  MVirtualSignal( hwres_nvic_tx_int, "tx_int", "signal_in", uart_enabled, false)
+		vs_nvic_rx_int =  MVirtualSignal( hwres_nvic_rx_int, "rx_int", "signal_in", uart_enabled, false)
+	
+		/*Connections*/
+		addConnectionConstraint(vs_port_rx, vs_uart_ch_rx)
+		addConnectionConstraint(vs_uart_ch_tx, vs_port_tx)
+		
+		addConnectionConstraint(vs_uart_ch_tx_sr, vs_nvic_tx_int)
+		addConnectionConstraint(vs_uart_ch_rx_sr, vs_nvic_rx_int)
+		
+		ginteger_PROBE_COM_CFG_RX_MAX_SIZE.enabled = uart_enabled
+		ginteger_PROBE_COM_CFG_TX_MAX_SIZE.enabled = uart_enabled
+		gcheck_PROBE_COM_CFG_WR_REQ_EN.enabled = uart_enabled
+		gcheck_PROBE_COM_CFG_STR_REQ_EN.enabled = uart_enabled
+        ginteger_PROBE_COM_CFG_STR_IN_BUF_SIZE.enabled = uart_enabled_and_str_req_enable
+        ginteger_PROBE_COM_CFG_STR_OUT_BUF_SIZE.enabled = uart_enabled_and_str_req_enable
+		gcheck_PROBE_COM_CFG_TERMINAL_REQ_EN.enabled = uart_enabled
+		gcheck_PROBE_COM_CFG_STAT_EN.enabled = uart_enabled
+		
+		MF max_subpriority = MF({
+			if (gcombo_comm_interface.value == "UART") {
+			  return appres_cpu.getVal(["gint_maxInterruptSubPriority", "value"])
+			}
+			else {
+			  return 0
+			}
+		}, Integer)
+			
+		MF max_priority = MF({
+			if (gcombo_comm_interface.value == "UART") {
+			  return appres_cpu.getVal(["gint_maxInterruptPreemptPriority", "value"])
+			}
+			else
+			{
+			  return 63
+			}
+		}, Integer)
+
+		if (family == "XMC4") {
+			ginterruptprio_tx_int.maxPriority = max_priority
+			ginterruptprio_rx_int.maxPriority = max_priority
+			ginterruptprio_tx_int.maxSubPriority = max_subpriority
+			ginterruptprio_rx_int.maxSubPriority = max_subpriority
+		}
+
+		gtab_uart_settings.visible = uart_enabled
+		gtab_oscilloscope_settings.visible = osc_enabled
+	
+	}
+	
+	// File Generation
+	def generateFiles(){
+		String family = daveEnv.project.selectedDevice.deviceId.family 	//ex:XMC4 or XMC1
+		
+		copy("cpu_bsp.c", "cpu_bsp.c")
+		copy("cpu_cache.h", "cpu_cache.h")
+		copy("cpu_cfg.h", "cpu_cfg.h")
+		copy("cpu_core.c", "cpu_core.c")
+		copy("cpu_core.h", "cpu_core.h")
+		copy("cpu_def.h", "cpu_def.h")
+		
+		copy("lib_ascii.c", "lib_ascii.c")
+		copy("lib_ascii.h", "lib_ascii.h")
+		copy("lib_cfg.h", "lib_cfg.h")
+		copy("lib_def.h", "lib_def.h")
+		copy("lib_math.c", "lib_math.c")
+		copy("lib_math.h", "lib_math.h")
+		copy("lib_mem.c", "lib_mem.c")
+		copy("lib_mem.h", "lib_mem.h")
+		copy("lib_str.c", "lib_str.c")
+		copy("lib_str.h", "lib_str.h")
+
+		generate("probe_com_cfgh.tmpl", "probe_com_cfg.h")
+		copy("probe_com_os.c", "probe_com_os.c")
+		copy("probe_com.c", "probe_com.c")
+		copy("probe_com.h", "probe_com.h")
+		copy("probe_rs232_os.c", "probe_rs232_os.c")
+		copy("probe_rs232.c", "probe_rs232.c")
+		copy("probe_rs232.h", "probe_rs232.h")
+		copy("probe_rs232c.c", "probe_rs232c.c")
+		copy("probe_rs232c.h", "probe_rs232c.h")
+
+		generate("probe_scope_cfgh.tmpl", "probe_scope_cfg.h")
+		copy("probe_scope.h", "probe_scope.h")
+		copy("probe_scope.c", "probe_scope.c")
+
+		generate("ucprobe_confc.tmpl", "ucprobe_conf.c")
+		generate("ucprobe_confh.tmpl", "ucprobe_conf.h")
+		generate("ucprobe_externh.tmpl", "ucprobe_extern.h")
+		copy("ucprobe.h", "ucprobe.h")
+		copy("ucprobe.c", "ucprobe.c")
+		
+		if (family == "XMC1") {
+			copy("uC-LIB/ARM-Cortex-M0/lib_mem_a.S", "lib_mem_a.S")
+			copy("uC-CPU/ARM-Cortex-M0/cpu_a.S", "cpu_a.S")
+			copy("uC-CPU/ARM-Cortex-M0/cpu_c.c", "cpu_c.c")
+			copy("uC-CPU/ARM-Cortex-M0/cpu.h", "cpu.h")
+		}
+		else {
+			copy("uC-LIB/ARM-Cortex-M4/lib_mem_a.S", "lib_mem_a.S")			
+			copy("uC-CPU/ARM-Cortex-M4/cpu_a.S", "cpu_a.S")
+			copy("uC-CPU/ARM-Cortex-M4/cpu_c.c", "cpu_c.c")
+			copy("uC-CPU/ARM-Cortex-M4/cpu.h", "cpu.h")
+		}		
+	}
+	
+}
