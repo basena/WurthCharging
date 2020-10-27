@@ -3,6 +3,7 @@
 
 volatile static uint32_t g_n_cells = 5;
 volatile static float g_cell_full_v = 4200;
+volatile static float g_cell_margin_v = 4150;
 
 volatile static float g_acomp_mV = 0;
 volatile static float g_acomp_mV_average = 0;
@@ -11,9 +12,11 @@ volatile static float g_temperature_average = 0;
 volatile static float g_voltage = 0;
 volatile static float g_voltage_average = 0;
 volatile static float g_voltage_out_max = g_cell_full_v * g_n_cells;
+volatile static float g_voltage_out_min = g_cell_margin_v * g_n_cells;
 volatile static float g_current = 0;
 volatile static float g_current_average = 0;
-volatile static float g_current_max = 4000;
+volatile static float g_current_max = 4100;
+volatile static float g_current_min = 3900;
 volatile static float g_P_out;
 volatile static uint32_t g_ADC_voltage, g_ADC_current, g_ADC_temperature, g_ADC_acomp, g_ADC_vref;
 volatile static float g_ADC_vref_average=880;
@@ -96,7 +99,7 @@ int main(void)
 		if (counter_20ms >= 5)
 		{
 			counter_20ms = 0;
-			if (g_voltage < g_voltage_out_max && g_current < g_current_max)
+			if (g_voltage < g_voltage_out_min && g_current < g_current_min)
 			{
 				/* Power Up */
 				DIGITAL_IO_SetOutputLow(&UP_LED); led_up = 0;
@@ -105,7 +108,7 @@ int main(void)
 				while (send_redundant-- > 0)
 					while(UART_Transmit(&COM, &up_hex, 1));
 			}
-			else
+			else if (g_voltage > g_voltage_out_max && g_current > g_current_max)
 			{
 				/* Power Down */
 				DIGITAL_IO_SetOutputHigh(&UP_LED); led_up = 1;
