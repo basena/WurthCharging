@@ -1,13 +1,16 @@
 #include <DAVE.h>                 //Declarations from DAVE Code Generation (includes SFR declaration)
 #include "xmc_vadc.h"
 
+volatile static uint32_t g_n_cells = 5;
+volatile static float g_cell_full_v = 4200;
+
 volatile static float g_acomp_mV = 0;
 volatile static float g_acomp_mV_average = 0;
 volatile static float g_temperature = 0;
 volatile static float g_temperature_average = 0;
 volatile static float g_voltage = 0;
 volatile static float g_voltage_average = 0;
-volatile static float g_voltage_out_max = 21000;
+volatile static float g_voltage_out_max = g_cell_full_v * g_n_cells;
 volatile static float g_current = 0;
 volatile static float g_current_average = 0;
 volatile static float g_current_max = 4000;
