@@ -1,9 +1,12 @@
 #include <DAVE.h>                 //Declarations from DAVE Code Generation (includes SFR declaration)
 #include "xmc_vadc.h"
+#include "math.h"
 
-volatile static uint32_t g_n_cells = 5;
+volatile static uint8_t init = 0; // set to 1 to disable automatic cell detection
+volatile static uint32_t g_n_cells = 4; // assume 4, later set based on voltage during init
 volatile static float g_cell_full_v = 4150;
 volatile static float g_cell_margin_v = 4100;
+volatile static float g_cell_empty_v = 3500; // may misdetect if battery is overdischarged, but won't overcharge
 
 volatile static float g_acomp_mV = 0;
 volatile static float g_acomp_mV_average = 0;
@@ -11,8 +14,8 @@ volatile static float g_temperature = 0;
 volatile static float g_temperature_average = 0;
 volatile static float g_voltage = 0;
 volatile static float g_voltage_average = 0;
-volatile static float g_voltage_out_max = g_cell_full_v * g_n_cells;
-volatile static float g_voltage_out_min = g_cell_margin_v * g_n_cells;
+volatile static float g_voltage_out_max = 16600; // Assume 4S. Later set to g_cell_full_v * g_n_cells;
+volatile static float g_voltage_out_min = 16400; // Assume 4S. Later set to g_cell_margin_v * g_n_cells;
 volatile static float g_current = 0;
 volatile static float g_current_average = 0;
 volatile static float g_current_max = 4100;
@@ -38,8 +41,8 @@ volatile static uint32_t g_critical_detected=0;
 #define ACOMP_HYSTERESIS    50
 #define VREF_VALUE_MV       2480
 
-static uint8_t up_hex = ~0x00; //0x44; //0b01000100;
-static uint8_t dn_hex = ~0xFF; //0x77; //0b01110111;
+static uint8_t up_hex = 0xFF; //0x44; //0b01000100;
+static uint8_t dn_hex = 0x00; //0x77; //0b01110111;
 
 
 void check_threshold (uint32_t value, uint32_t threshold, uint32_t hysteresis_offset, volatile uint32_t* status)
@@ -108,7 +111,7 @@ int main(void)
 				while (send_redundant-- > 0)
 					while(UART_Transmit(&COM, &up_hex, 1));
 			}
-			else if (g_voltage > g_voltage_out_max && g_current > g_current_max)
+			else if (g_voltage > g_voltage_out_max || g_current > g_current_max)
 			{
 				/* Power Down */
 				DIGITAL_IO_SetOutputHigh(&UP_LED); led_up = 1;
@@ -116,6 +119,12 @@ int main(void)
 				send_redundant = 5;
 				while (send_redundant-- > 0)
 					while(UART_Transmit(&COM, &dn_hex, 1));
+			}
+			else
+			{
+				/* Deadzone */
+				DIGITAL_IO_SetOutputLow(&UP_LED); led_up = 0;
+				DIGITAL_IO_SetOutputLow(&DOWN_LED); led_down = 0;
 			}
 		}
   }
@@ -189,6 +198,14 @@ void task_20ms(void)
 	/* Power processing
 	 */
 	g_P_out = g_voltage * g_current * 1E-6;
+
+	if (init == 0 && g_voltage_average > 4.2)
+	{
+		g_n_cells = ceil( g_voltage_average / g_cell_empty_v );
+		g_voltage_out_max = g_n_cells * g_cell_full_v;
+		g_voltage_out_min = g_n_cells * g_cell_margin_v;
+		init = 1;
+	}
 
 	return;
 }
