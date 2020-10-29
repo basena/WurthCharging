@@ -2,11 +2,11 @@
 #include "xmc_vadc.h"
 #include "math.h"
 
-volatile static uint8_t init = 0; // set to 1 to disable automatic cell detection
-volatile static uint32_t g_n_cells = 4; // assume 4, later set based on voltage during init
+volatile static uint8_t init = 1; // set to 1 to disable automatic cell detection
+volatile static uint32_t g_n_cells = 5; // assume 4, later set based on voltage during init
 volatile static float g_cell_full_v = 4150;
 volatile static float g_cell_margin_v = 4100;
-volatile static float g_cell_empty_v = 3500; // may misdetect if battery is overdischarged, but won't overcharge
+volatile static float g_cell_nom_v = 3900; // may misdetect if battery is overdischarged, but won't overcharge
 
 volatile static float g_acomp_mV = 0;
 volatile static float g_acomp_mV_average = 0;
@@ -14,8 +14,8 @@ volatile static float g_temperature = 0;
 volatile static float g_temperature_average = 0;
 volatile static float g_voltage = 0;
 volatile static float g_voltage_average = 0;
-volatile static float g_voltage_out_max = 16600; // Assume 4S. Later set to g_cell_full_v * g_n_cells;
-volatile static float g_voltage_out_min = 16400; // Assume 4S. Later set to g_cell_margin_v * g_n_cells;
+volatile static float g_voltage_out_max = 20750; // Assume 5S. Later set to g_cell_full_v * g_n_cells;
+volatile static float g_voltage_out_min = 20500; // Assume 5S. Later set to g_cell_margin_v * g_n_cells;
 volatile static float g_current = 0;
 volatile static float g_current_average = 0;
 volatile static float g_current_max = 4100;
@@ -75,6 +75,9 @@ int main(void)
 
     }
   }
+
+  g_voltage_out_max = g_n_cells * g_cell_full_v;
+  g_voltage_out_min = g_n_cells * g_cell_margin_v;
 
   /* Placeholder for user application code. The while loop below can be replaced with user application code. */
   while(1U)
@@ -199,9 +202,9 @@ void task_20ms(void)
 	 */
 	g_P_out = g_voltage * g_current * 1E-6;
 
-	if (init == 0 && g_voltage_average > 4.2)
+	if (init == 0 && g_voltage > 7.4)
 	{
-		g_n_cells = ceil( g_voltage_average / g_cell_empty_v );
+		g_n_cells = round(g_voltage_average / g_cell_nom_v );
 		g_voltage_out_max = g_n_cells * g_cell_full_v;
 		g_voltage_out_min = g_n_cells * g_cell_margin_v;
 		init = 1;

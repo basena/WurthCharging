@@ -48,10 +48,10 @@ volatile uint8_t g_clamp = 0;
 volatile static uint8_t g_pwm_en = 0;
 volatile static uint32_t g_ADC_voltage, g_ADC_current, g_ADC_temperature, g_ADC_acomp, g_ADC_vref;
 volatile static float g_ADC_vref_average=880;
-volatile static float g_PWM_current_frequency=175E3;
+volatile static float g_PWM_current_frequency=190E3;
 volatile static uint32_t counter_20ms = 0;
 uint8_t debug_output_buffer[255];
-const float PWM_start_frequency = 175E3;
+const float PWM_start_frequency = 190E3;
 const float PWM_max_frequency = 205E3;
 const float PWM_min_frequency = 100E3;
 const float PWM_delta_frequency  = 0.1E3;
@@ -192,19 +192,15 @@ int main(void)
 			for (index=0; index<5; index++)
 			{
 				uint8_t ones = count_ones(receive_buffer[index]);
-				if (ones < ones_thresh) //(hamm_diff(receive_buffer[index], POWER_UP   ) < hamm_margin)
-					power_up++;
-				else if (ones > 8 - ones_thresh) //if (hamm_diff(receive_buffer[index], POWER_DOWN ) < hamm_margin)
+				if (ones > 5 - ones_thresh) //if (hamm_diff(receive_buffer[index], POWER_DOWN ) < hamm_margin)
 					power_down++;
+				else if (ones < ones_thresh) //(hamm_diff(receive_buffer[index], POWER_UP   ) < hamm_margin)
+					power_up++;
 			}
-			if (power_up > 3)
-			{
-				g_power_up=1;
-			}
-			else if (power_down > 3)
-			{
+			if (power_down > 2)
 				g_power_down=1;
-			}
+			else if (power_up > 2)
+				g_power_up=1;
 			index = 0;
 		}
 		/* Reset watchdog of InField-communication */
