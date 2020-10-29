@@ -2,8 +2,8 @@
 #include "xmc_vadc.h"
 
 volatile static uint32_t g_n_cells = 5;
-volatile static float g_cell_full_v = 4200;
-volatile static float g_cell_margin_v = 4150;
+volatile static float g_cell_full_v = 4150;
+volatile static float g_cell_margin_v = 4100;
 
 volatile static float g_acomp_mV = 0;
 volatile static float g_acomp_mV_average = 0;
