@@ -11,8 +11,8 @@
  */
 
 #define JMP1_AUTOMATIC_CONTROL 1
-#define POWER_UP	0x77
-#define POWER_DOWN	0x88
+//#define POWER_UP	0x77
+//#define POWER_DOWN	0x88
 
 static const float g_hysterese_voltage_V = 0.050;
 volatile static float g_power_up = 0, g_power_down = 0;
