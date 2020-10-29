@@ -54,7 +54,7 @@ uint8_t debug_output_buffer[255];
 const float PWM_start_frequency = 175E3;
 const float PWM_max_frequency = 205E3;
 const float PWM_min_frequency = 100E3;
-const float PWM_delta_frequency  = 1E3;
+const float PWM_delta_frequency  = 0.1E3;
 uint32_t histogram_received_patterns[256];
 const uint8_t hamm_margin = 4;
 const uint8_t ones_thresh = 4;
