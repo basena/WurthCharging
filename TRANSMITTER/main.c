@@ -57,7 +57,7 @@ const float PWM_min_frequency = 100E3;
 const float PWM_delta_frequency  = 1E3;
 uint32_t histogram_received_patterns[256];
 const uint8_t hamm_margin = 4;
-const uint8_t ones_thresh = 3;
+const uint8_t ones_thresh = 4;
 
 void PWM_enable_disable_toggle()
 {
@@ -197,11 +197,11 @@ int main(void)
 				else //if (hamm_diff(receive_buffer[index], POWER_DOWN ) < hamm_margin)
 					power_down++;
 			}
-			if (power_up > power_down)
+			if (power_up > 3)
 			{
 				g_power_up=1;
 			}
-			else if (power_down > power_up)
+			else if (power_down > 3)
 			{
 				g_power_down=1;
 			}
