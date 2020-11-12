@@ -32,6 +32,10 @@ volatile static uint32_t g_overcurrent_detected=0;
 volatile static uint32_t g_overtemperature_detected=0;
 volatile static uint32_t g_critical_detected=0;
 
+volatile static uint8_t g_dualrate_en=0;
+volatile static uint8_t g_rise_state = 0; // 0: first rise, 1: first fall, 2: second rise (go slowly now)
+
+
 #define VOLTAGE_MAX			28000
 #define VOLTAGE_HYSTERESIS	1000
 #define CURRENT_MAX			11000
@@ -54,7 +58,9 @@ uint8_t debug_output_buffer[255];
 const float PWM_start_frequency = 190E3;
 const float PWM_max_frequency = 205E3;
 const float PWM_min_frequency = 100E3;
-const float PWM_delta_frequency  = 0.1E3;
+const float PWM_delta_freq_rise  = 1.0E3;
+const float PWM_delta_freq_fine  = 0.1E3;
+volatile static float PWM_delta_frequency;
 uint32_t histogram_received_patterns[256];
 const uint8_t hamm_margin = 4;
 const uint8_t ones_thresh = 2;
@@ -142,6 +148,10 @@ int main(void)
   }
 
   /* Placeholder for user application code. The while loop below can be replaced with user application code. */
+
+  PWM_delta_frequency = PWM_delta_freq_rise;
+  g_rise_state=g_dualrate_en; // will set to fine at the first up command by skipping a state
+
   while(1U)
   {
 	// TODO: Temperature is overwritten here with 50. For debugging only until sensor is calibrated
@@ -198,9 +208,19 @@ int main(void)
 					power_up++;
 			}
 			if (power_down > 2)
+			{
 				g_power_down=1;
+				if (g_rise_state == 0) g_rise_state = 1;
+			}
 			else if (power_up > 2)
+			{
 				g_power_up=1;
+				if (g_rise_state == 1)
+				{
+					g_rise_state = 2;
+					PWM_delta_frequency = PWM_delta_freq_fine;
+				}
+			}
 			index = 0;
 		}
 		/* Reset watchdog of InField-communication */
