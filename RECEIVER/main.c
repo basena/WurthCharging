@@ -3,7 +3,7 @@
 #include "math.h"
 
 volatile static uint8_t init = 1; // set to 1 to disable automatic cell detection
-volatile static uint32_t g_n_cells = 5; // assume 4, later set based on voltage during init
+volatile static uint8_t g_n_cells = 5; // assume 4, later set based on voltage during init
 volatile static float g_cell_full_v = 4150;
 volatile static float g_cell_margin_v = 4100;
 volatile static float g_cell_nom_v = 3900; // may misdetect if battery is overdischarged, but won't overcharge
@@ -18,8 +18,8 @@ volatile static float g_voltage_out_max = 20750; // Assume 5S. Later set to g_ce
 volatile static float g_voltage_out_min = 20500; // Assume 5S. Later set to g_cell_margin_v * g_n_cells;
 volatile static float g_current = 0;
 volatile static float g_current_average = 0;
-volatile static float g_current_max = 4100;
-volatile static float g_current_min = 3900;
+volatile static float g_current_max = 8100;
+volatile static float g_current_min = 7900;
 volatile static float g_P_out;
 volatile static uint32_t g_ADC_voltage, g_ADC_current, g_ADC_temperature, g_ADC_acomp, g_ADC_vref;
 volatile static float g_ADC_vref_average=880;
