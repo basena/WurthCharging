@@ -32,7 +32,7 @@ volatile static uint32_t g_overcurrent_detected=0;
 volatile static uint32_t g_overtemperature_detected=0;
 volatile static uint32_t g_critical_detected=0;
 
-volatile static uint8_t g_dualrate_en=0;
+volatile static uint8_t g_dualrate_en = 1; // set to 0 to skip coarse frequency phase
 volatile static uint8_t g_rise_state = 0; // 0: first rise, 1: first fall, 2: second rise (go slowly now)
 
 
@@ -150,7 +150,7 @@ int main(void)
   /* Placeholder for user application code. The while loop below can be replaced with user application code. */
 
   PWM_delta_frequency = PWM_delta_freq_rise;
-  g_rise_state=g_dualrate_en; // will set to fine at the first up command by skipping a state
+  g_rise_state=!g_dualrate_en; // will set to fine at the first up command by skipping a state
 
   while(1U)
   {
